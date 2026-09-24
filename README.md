@@ -93,8 +93,9 @@ soft dependencies like the rest, and the admin form names them the same way.
 the server's password (`OPENCODE_SERVER_PASSWORD`), models are named `providerID/modelID` exactly
 as the server routes them (`anthropic/claude-sonnet-4-6`), and **Refresh Models** lists every model
 the server has configured. Every call opens a throw-away session with all tools switched off and
-all permissions denied, then deletes it. Tool calling and the universal `max_tokens` /
-`temperature` / `top_p` / `stop` options are not available through it. If Magento runs in Docker,
+all permissions denied, then deletes it. Tool calling is not available through it, and the universal
+`max_tokens` / `temperature` / `top_p` / `stop` options are accepted but dropped: the server applies
+its own limits. If Magento runs in Docker,
 start the server with `--hostname 0.0.0.0` and a password, and use
 `http://host.docker.internal:4096` as the base URL. Set **Agent** to a plain agent defined in the
 server's own config to keep opencode's coding-assistant prompt out of the answers.

@@ -232,6 +232,10 @@ on `Model\Client\OptionNormalizer` if your provider spells them differently:
                         </item>
                     </item>
                 </item>
+                <!-- options the provider has no equivalent for, dropped without an error -->
+                <item name="ignore" xsi:type="array">
+                    <item name="stop" xsi:type="string">stop</item>
+                </item>
             </item>
         </argument>
     </arguments>
@@ -240,11 +244,15 @@ on `Model\Client\OptionNormalizer` if your provider spells them differently:
 
 An option absent from `map`, or a canonical value absent from `values`, is treated as unsupported
 by that provider and raises a `LocalizedException` naming both, rather than being dropped on the
-way to the wire. The exception is `tool_choice: auto`, which every provider treats as its own
-default and so is a silent no-op wherever a dialect declares no translation for it at all. A value
-outside the canonical set (`auto`, `none`, `required`, `['tool' => '<name>']` for `tool_choice`;
-`none`, `low`, `medium`, `high` for `reasoning_effort`) is the provider's own and passes through
-as written. Declaring no dialect at all passes every option through untouched.
+way to the wire — unless the dialect lists the option under `ignore`, in which case it is removed
+silently. Use `ignore` only where losing the option cannot change the meaning of a call (a cap or a
+sampling setting), because consumers set these options without knowing which provider an
+administrator picked, and a refused one fails every call they make. `opencode_server` ignores all
+four. The other exception is `tool_choice: auto`, which every provider treats as its own default
+and so is a silent no-op wherever a dialect declares no translation for it at all. A value outside
+the canonical set (`auto`, `none`, `required`, `['tool' => '<name>']` for `tool_choice`; `none`,
+`low`, `medium`, `high` for `reasoning_effort`) is the provider's own and passes through as
+written. Declaring no dialect at all passes every option through untouched.
 
 ### Model-dependent values
 
