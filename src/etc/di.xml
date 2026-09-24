@@ -89,6 +89,7 @@
                 <item name="huggingface" xsi:type="object">MageOS\AiBase\AiServices\HuggingFace</item>
                 <item name="lmstudio" xsi:type="object">MageOS\AiBase\AiServices\LmStudio</item>
                 <item name="ollama" xsi:type="object">MageOS\AiBase\AiServices\Ollama</item>
+                <item name="opencode" xsi:type="object">MageOS\AiBase\AiServices\OpenCode</item>
                 <item name="openrouter" xsi:type="object">MageOS\AiBase\AiServices\OpenRouter</item>
                 <item name="openai" xsi:type="object">MageOS\AiBase\AiServices\OpenAi</item>
             </argument>
@@ -149,6 +150,22 @@
                     <item name="package" xsi:type="string">symfony/ai-ollama-platform</item>
                     <item name="dialect" xsi:type="string">ollama</item>
                     <item name="catalog" xsi:type="string">Symfony\AI\Platform\Bridge\Ollama\ModelCatalog</item>
+                </item>
+                <!-- OpenCode Zen. The one bridge here that is not a symfony/* package: upstream has
+                     released none for OpenCode, so Mage-OS ships the bridge itself, built on
+                     symfony/ai-generic-platform. It stays a `suggest` like every other optional
+                     bridge, and the admin form names it the same way.
+
+                     No `catalog`: the bridge accepts any model id and routes it to Chat
+                     Completions, because Zen is a gateway whose catalogue turns over monthly and
+                     is published as an endpoint rather than a list. There is therefore nothing for
+                     ClientFactory::createCatalog() to extend — which is the point, since what it
+                     extends a catalogue *with* is the administrator's own model choice, and here
+                     that choice is never rejected to begin with. -->
+                <item name="opencode" xsi:type="array">
+                    <item name="factory" xsi:type="string">MageOS\AiOpenCodePlatform\Factory</item>
+                    <item name="package" xsi:type="string">mage-os/library-ai-opencode-platform</item>
+                    <item name="dialect" xsi:type="string">openai_chat</item>
                 </item>
                 <item name="openrouter" xsi:type="array">
                     <item name="factory" xsi:type="string">Symfony\AI\Platform\Bridge\OpenRouter\Factory</item>

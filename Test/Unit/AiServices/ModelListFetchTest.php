@@ -10,6 +10,7 @@ use Magento\Framework\Exception\LocalizedException;
 use MageOS\AiBase\AiServices\Anthropic;
 use MageOS\AiBase\AiServices\Ollama;
 use MageOS\AiBase\AiServices\OpenAi;
+use MageOS\AiBase\AiServices\OpenCode;
 use MageOS\AiBase\Api\Data\FieldDescriptorInterfaceFactory;
 use MageOS\AiBase\Model\ModelList\HttpFetcher;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -19,6 +20,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \MageOS\AiBase\AiServices\OpenAi
  * @covers \MageOS\AiBase\AiServices\Ollama
  * @covers \MageOS\AiBase\AiServices\Anthropic
+ * @covers \MageOS\AiBase\AiServices\OpenCode
  */
 final class ModelListFetchTest extends TestCase
 {
@@ -119,5 +121,53 @@ final class ModelListFetchTest extends TestCase
         $this->expectExceptionMessage('missing "models" list');
 
         $service->fetchModels([]);
+    }
+
+    /**
+     * Zen's listing carries no display name of any kind, only the id every other field of the entry
+     * describes. Asking for one would label every model after whichever key happened to be there.
+     */
+    public function test_opencode_fetch_models_labels_entries_by_their_id(): void
+    {
+        $this->fetcher->expects(self::once())->method('getJson')
+            ->with('https://opencode.ai/zen/v1/models', ['Authorization' => 'Bearer zen-test'])
+            ->willReturn(['data' => [
+                ['id' => 'kimi-k3', 'object' => 'model', 'owned_by' => 'opencode'],
+                ['id' => 'glm-5.3-flash', 'object' => 'model', 'owned_by' => 'opencode'],
+            ]]);
+
+        $service = new OpenCode($this->fieldFactory, $this->fetcher);
+
+        self::assertSame(
+            ['kimi-k3' => 'kimi-k3', 'glm-5.3-flash' => 'glm-5.3-flash'],
+            $service->fetchModels(['api_key' => 'zen-test']),
+        );
+    }
+
+    /**
+     * The hosted gateway serves its listing unauthenticated, so an administrator can populate the
+     * model list before pasting a key. Sending an empty bearer token instead would turn that into
+     * a 401 for no reason.
+     */
+    public function test_opencode_fetch_models_sends_no_authorization_header_without_a_key(): void
+    {
+        $this->fetcher->expects(self::once())->method('getJson')
+            ->with('https://opencode.ai/zen/v1/models', [])
+            ->willReturn(['data' => []]);
+
+        $service = new OpenCode($this->fieldFactory, $this->fetcher);
+
+        self::assertSame([], $service->fetchModels([]));
+    }
+
+    public function test_opencode_fetch_models_uses_the_configured_base_url_without_trailing_slash(): void
+    {
+        $this->fetcher->expects(self::once())->method('getJson')
+            ->with('https://ai.example.com/zen/v1/models', [])
+            ->willReturn(['data' => []]);
+
+        $service = new OpenCode($this->fieldFactory, $this->fetcher);
+
+        self::assertSame([], $service->fetchModels(['base_url' => 'https://ai.example.com/zen/']));
     }
 }

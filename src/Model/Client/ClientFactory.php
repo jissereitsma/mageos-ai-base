@@ -291,7 +291,7 @@ class ClientFactory implements AiClientFactoryInterface
             ),
             default => $factoryClass::createPlatform(
                 $this->stringValue($config, 'api_key'),
-                ...$this->optionalArguments($factoryClass, $code, $config),
+                ...$this->optionalArguments($factoryClass, $code, $config, withBaseUrl: true),
             ),
         };
 
@@ -324,10 +324,18 @@ class ClientFactory implements AiClientFactoryInterface
      * @param string $factoryClass Bridge factory FQCN
      * @param string $code Service code
      * @param array<string,mixed> $config Stored service configuration
+     * @param bool $withBaseUrl Whether the caller left this method to pass the endpoint. Only the
+     *        default arm above may: the arms that pass an endpoint positionally must not, since a
+     *        bridge whose first parameter happens to be spelled `baseUrl` — LM Studio's is — would
+     *        receive it twice and raise "Named parameter $baseUrl overwrites previous argument".
      * @return array<string,mixed> Argument name => value
      */
-    private function optionalArguments(string $factoryClass, string $code, array $config): array
-    {
+    private function optionalArguments(
+        string $factoryClass,
+        string $code,
+        array $config,
+        bool $withBaseUrl = false
+    ): array {
         $accepted = [];
         foreach ((new \ReflectionMethod($factoryClass, 'createPlatform'))->getParameters() as $parameter) {
             $accepted[$parameter->getName()] = true;
@@ -340,6 +348,16 @@ class ClientFactory implements AiClientFactoryInterface
         if ($catalog !== null && isset($accepted['modelCatalog'])) {
             $arguments['modelCatalog'] = $catalog;
         }
+
+        // A hosted provider fronted by a proxy, or a gateway an organisation runs itself, speaks
+        // its provider's wire format at an address of its own. Passed only when the row actually
+        // holds one, so a bridge keeps its own default host for every provider whose form offers
+        // no such field, and rows saved before a field was added keep working.
+        $baseUrl = $withBaseUrl && isset($accepted['baseUrl']) ? ($config['base_url'] ?? null) : null;
+        if (is_string($baseUrl) && trim($baseUrl) !== '') {
+            $arguments['baseUrl'] = rtrim(trim($baseUrl), '/');
+        }
+
         return $arguments;
     }
 
