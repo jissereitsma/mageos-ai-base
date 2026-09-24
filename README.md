@@ -85,7 +85,7 @@ composer require symfony/ai-gemini-platform
 ```
 
 One provider's bridge does not come from Symfony: upstream has released none for OpenCode, so
-Mage-OS ships it as `mage-os/library-ai-opencode-platform`. It is a soft dependency like the rest,
+Mage-OS ships it as `mage-os/library-ai-opencode-zen-platform`. It is a soft dependency like the rest,
 and the admin form names it the same way.
 
 > **symfony/ai-platform is experimental.** Experimental features are not covered by Symfony's

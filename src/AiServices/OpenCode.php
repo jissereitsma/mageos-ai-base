@@ -46,7 +46,7 @@ class OpenCode implements AiServiceConfigurationInterface, ModelListProviderInte
      */
     public function getCode(): string
     {
-        return 'opencode';
+        return 'opencode-zen';
     }
 
     /**

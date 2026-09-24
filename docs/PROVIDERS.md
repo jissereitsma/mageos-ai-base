@@ -165,7 +165,7 @@ bridge omits it and is labelled unsupported instead.
 
 `factory` does **not** have to be a Symfony class, and `package` does not have to be a `symfony/*`
 package. Upstream releases one bridge per provider and has released none for OpenCode, so this
-module registers `MageOS\AiOpenCodePlatform\Factory` from `mage-os/library-ai-opencode-platform`
+module registers `MageOS\AiOpenCodePlatform\Factory` from `mage-os/library-ai-opencode-zen-platform`
 — a bridge built on `symfony/ai-generic-platform` — through this same entry, and everything that
 reads the registry treats it identically. Write your own the same way when a provider has no
 upstream bridge; the only contract is a static `createPlatform()` that returns a platform object.
