@@ -378,8 +378,17 @@ throw-away session:
 - **No state carried.** The session is deleted in a `finally`, success or not. Conversation history
   therefore travels inside the one prompt, flattened into a labelled transcript; system messages
   use the server's own `system` field.
-- **What it gives up.** Tool calling (the server's agent owns tools, and this bridge switches them
-  off), real streaming (the server answers once the agent has finished; a streaming caller gets
+- **Tool calling is emulated, not given up.** The first version refused any request carrying tools,
+  which conflated the opencode *agent* running tools on its own host (off, and staying off) with the
+  *model* asking the caller to run the caller's tools. That made the provider unusable for
+  `MagoAssistant_Mago`, whose every turn is a tool loop. The bridge now describes offered tools in
+  the system prompt and parses `<tool_call>` blocks back into real `ToolCall` objects, so the tools
+  still execute in Magento with Mago's write confirmations, per-admin permissions and privacy
+  scrubbing intact. Reliability is the model's: a model that ignores the format answers in prose,
+  which is returned as text. Rejected alternative: the server's `format: json_schema` structured
+  output, which it implements by injecting its own `StructuredOutput` *tool* — fighting the very
+  switches that keep the agent harmless.
+- **What it does give up.** Real streaming (the server answers once the agent has finished; a streaming caller gets
   the whole answer as one chunk), and every universal option: the message endpoint has no
   `max_tokens`, `temperature`, `top_p` or `stop`, so the `opencode_server` dialect maps none of
   them and lists all four under `ignore`: they are dropped before the request. Refusing them was the

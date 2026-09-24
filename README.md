@@ -93,12 +93,15 @@ soft dependencies like the rest, and the admin form names them the same way.
 the server's password (`OPENCODE_SERVER_PASSWORD`), models are named `providerID/modelID` exactly
 as the server routes them (`anthropic/claude-sonnet-4-6`), and **Refresh Models** lists every model
 the server has configured. Every call opens a throw-away session with all tools switched off and
-all permissions denied, then deletes it. Tool calling is not available through it, and the universal
-`max_tokens` / `temperature` / `top_p` / `stop` options are accepted but dropped: the server applies
-its own limits. If Magento runs in Docker,
+all permissions denied, then deletes it. Tool calling works: the bridge describes your tools in the prompt and parses the model's calls back
+out, so consumers that drive a tool loop (Mago among them) work — reliability depends on the model.
+The universal `max_tokens` / `temperature` / `top_p` / `stop` options are accepted but dropped: the
+server applies its own limits. If Magento runs in Docker,
 start the server with `--hostname 0.0.0.0` and a password, and use
 `http://host.docker.internal:4096` as the base URL. Set **Agent** to a plain agent defined in the
-server's own config to keep opencode's coding-assistant prompt out of the answers.
+server's own config: the default agent injects opencode's own system prompt and the `AGENTS.md` of
+the directory the server runs in, which visibly leaks into answers (a live test replied "I'm in
+**Plan Mode**" and described the project it was started in).
 
 > **symfony/ai-platform is experimental.** Experimental features are not covered by Symfony's
 > [Backward Compatibility Promise](https://symfony.com/doc/current/contributing/code/bc.html).

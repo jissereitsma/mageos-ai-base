@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Tool calling through a self-hosted opencode server.** `opencode-custom` previously refused any
+  request carrying tools, which made it unusable for `MagoAssistant_Mago`, whose every turn is a tool
+  loop. The bridge now describes the offered tools in the system prompt and parses the model's
+  `<tool_call>` blocks back into real tool calls, so a consumer's loop works unchanged and the tools
+  still run inside Magento with all of its own safeguards. The opencode agent's own tools and
+  permissions stay switched off. A turn with calls reports finish reason `tool-call`; text alongside
+  them is kept; a malformed block or an unoffered tool name is returned as text rather than dropped.
+  Emulation reliability is the model's — a model that ignores the format answers in prose. Verified
+  live against `anthropic/claude-haiku-4-5` on opencode 1.18.32.
 - **OpenCode Custom provider** (`opencode-custom`, `AiServices\OpenCodeCustom`): a self-hosted
   `opencode serve` instance as an AI backend, with base URL (default `http://127.0.0.1:4096`),
   username (default `opencode`), server password (stored encrypted under `api_key`), an optional
@@ -15,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   has configured, from `GET /config/providers`. Its bridge, the new
   `mage-os/library-ai-opencode-custom-platform`, speaks the server's session API rather than Chat
   Completions: one throw-away session per call, created with every permission denied, prompted with
-  every tool switched off, and deleted afterwards. No tool calling, no incremental streaming, and
+  every tool switched off, and deleted afterwards. No incremental streaming, and
   the universal `max_tokens` / `temperature` / `top_p` / `stop` options are **dropped** through the
   new `opencode_server` dialect, since the server's message endpoint accepts none of them and applies
   its own limits.
