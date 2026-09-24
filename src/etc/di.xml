@@ -175,8 +175,8 @@
 
                      No `catalog`: models are `providerID/modelID` pairs from whatever providers the
                      server has configured, which only the server knows. Its own dialect, because
-                     the message endpoint takes none of the universal options; see the
-                     `opencode_server` entry on OptionNormalizer below. -->
+                     the message endpoint takes none of the universal options, which are dropped
+                     rather than refused; see the `opencode_server` entry on OptionNormalizer below. -->
                 <item name="opencode-custom" xsi:type="array">
                     <item name="factory" xsi:type="string">MageOS\AiOpenCodeCustomPlatform\Factory</item>
                     <item name="package" xsi:type="string">mage-os/library-ai-opencode-custom-platform</item>
@@ -259,11 +259,20 @@
                 </item>
                 <!-- A self-hosted opencode server's message endpoint accepts no sampling options at
                      all (verified against its OpenAPI spec at 1.18.32: model, agent, system, tools,
-                     parts, format, variant). The map is deliberately empty, so every universal
-                     option is refused with an error naming the provider, rather than being sent as
-                     a body field the server rejects or passed through and silently ignored. -->
+                     parts, format, variant); the server applies its own. The map is therefore empty
+                     and every universal option is listed under `ignore`: dropped before the request,
+                     not refused. Refusing broke every consumer that sets one without knowing which
+                     backend an administrator picked, this module's own Test Connection
+                     (`max_tokens` = 16) included. A dropped option can only make an answer longer or
+                     less deterministic than asked for, never wrong. -->
                 <item name="opencode_server" xsi:type="array">
                     <item name="map" xsi:type="array"/>
+                    <item name="ignore" xsi:type="array">
+                        <item name="max_tokens" xsi:type="string">max_tokens</item>
+                        <item name="temperature" xsi:type="string">temperature</item>
+                        <item name="top_p" xsi:type="string">top_p</item>
+                        <item name="stop" xsi:type="string">stop</item>
+                    </item>
                 </item>
                 <!-- Ollama's bridge moves everything it does not recognise as a top-level key into
                      the nested `options` object for us, so only the name has to change. -->

@@ -16,9 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `mage-os/library-ai-opencode-custom-platform`, speaks the server's session API rather than Chat
   Completions: one throw-away session per call, created with every permission denied, prompted with
   every tool switched off, and deleted afterwards. No tool calling, no incremental streaming, and
-  the universal `max_tokens` / `temperature` / `top_p` / `stop` options are refused through the new
-  empty-map `opencode_server` dialect, since the server's message endpoint accepts none of them.
+  the universal `max_tokens` / `temperature` / `top_p` / `stop` options are **dropped** through the
+  new `opencode_server` dialect, since the server's message endpoint accepts none of them and applies
+  its own limits.
   Token counts come from the server's own per-message accounting.
+- `OptionNormalizer` dialects can list universal options under a new `ignore` key: options the
+  provider has no equivalent for and that are removed without an error, instead of raising
+  `AiRequestNotSentException`. An unmapped option not listed there is still refused. Used by
+  `opencode_server`, where refusing made the provider unusable for any consumer that caps its
+  answers, including this module's own **Test Connection** (`max_tokens` = 16).
 - A stored `username` and `agent` are now passed by name to any bridge factory that declares them,
   alongside `base_url` (`Model\Client\ClientFactory::ROW_ARGUMENTS`). Same rules as `base_url`:
   only on the default dispatch arm, only when non-empty.

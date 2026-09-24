@@ -214,6 +214,10 @@ options (`max_tokens`, `temperature`, `top_p`, `stop`) are spelled on the wire â
                 <item name="defaults" xsi:type="array">
                     <item name="max_tokens" xsi:type="number">4096</item>
                 </item>
+                <!-- options the provider has no equivalent for, dropped without an error -->
+                <item name="ignore" xsi:type="array">
+                    <item name="stop" xsi:type="string">stop</item>
+                </item>
             </item>
         </argument>
     </arguments>
@@ -221,7 +225,11 @@ options (`max_tokens`, `temperature`, `top_p`, `stop`) are spelled on the wire â
 ```
 
 An option absent from `map` is treated as unsupported by that provider and raises a
-`LocalizedException` naming both, rather than being dropped on the way to the wire. Declaring no
+`LocalizedException` naming both, rather than being dropped on the way to the wire â€” unless the
+dialect lists it under `ignore`, in which case it is removed silently. Use `ignore` only where
+losing the option cannot change the meaning of a call (a cap or a sampling setting), because
+consumers set these options without knowing which provider an administrator picked, and a refused
+one fails every call they make. `opencode_server` ignores all four. Declaring no
 dialect at all passes every option through untouched.
 
 The factory signatures are verified against **symfony/ai-platform v0.13.0**; the component is

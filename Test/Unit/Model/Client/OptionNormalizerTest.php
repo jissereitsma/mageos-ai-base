@@ -157,10 +157,10 @@ final class OptionNormalizerTest extends TestCase
     }
 
     /**
-     * A dialect with an empty map is a provider that accepts none of the universal options. That
-     * has to refuse each one, not fall back to passing it through the way an undeclared dialect
-     * does: an opencode server ignores unknown body fields, so a pass-through cap would be dropped
-     * without a word.
+     * A provider with no equivalent for an option, and where dropping it is harmless, lists it
+     * under `ignore`. Consumers set these options without knowing which backend an administrator
+     * picked — this module's own Test Connection sends `max_tokens` — so refusing them would make
+     * the provider unusable for all of them.
      *
      * @param string $option
      * @param mixed $value
@@ -169,17 +169,30 @@ final class OptionNormalizerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\TestWith(['temperature', 0.2])]
     #[\PHPUnit\Framework\Attributes\TestWith(['top_p', 0.9])]
     #[\PHPUnit\Framework\Attributes\TestWith(['stop', 'END'])]
-    public function test_a_dialect_with_an_empty_map_refuses_every_universal_option(string $option, mixed $value): void
+    public function test_an_ignored_option_is_dropped_without_an_error(string $option, mixed $value): void
     {
-        $this->expectException(AiRequestNotSentException::class);
-        $this->expectExceptionMessage('opencode-custom');
-
-        $this->subject()->normalize('opencode-custom', [$option => $value]);
+        self::assertSame(['stream' => true], $this->subject()->normalize('opencode-custom', [$option => $value, 'stream' => true]));
     }
 
-    public function test_a_dialect_with_an_empty_map_still_passes_other_options_through(): void
+    /**
+     * Only the options a dialect lists are dropped. An option with no mapping that the dialect
+     * does not ignore is still refused, so a provider that genuinely cannot honour a setting keeps
+     * saying so.
+     */
+    public function test_an_unmapped_option_that_is_not_ignored_is_still_refused(): void
     {
-        self::assertSame(['stream' => true], $this->subject()->normalize('opencode-custom', ['stream' => true]));
+        $this->expectException(AiRequestNotSentException::class);
+        $this->expectExceptionMessage('"stop"');
+
+        $this->subject()->normalize('openai', ['stop' => 'END']);
+    }
+
+    /**
+     * Ignoring is per dialect: another provider's mapping of the same option is untouched.
+     */
+    public function test_ignoring_an_option_in_one_dialect_leaves_other_dialects_alone(): void
+    {
+        self::assertSame(['max_output_tokens' => 16], $this->subject()->normalize('openai', ['max_tokens' => 16]));
     }
 
     private function subject(): OptionNormalizer
@@ -208,8 +221,8 @@ final class OptionNormalizerTest extends TestCase
                     // A string, because that is literally what di.xml's `number` interpreter yields.
                     'defaults' => ['max_tokens' => '4096'],
                 ],
-                // What `<item name="map" xsi:type="array"/>` yields: declared, and empty.
-                'opencode_server' => ['map' => []],
+                // What di.xml declares: nothing to map onto, all four dropped.
+                'opencode_server' => ['map' => [], 'ignore' => ['max_tokens', 'temperature', 'top_p', 'stop']],
             ]
         );
     }

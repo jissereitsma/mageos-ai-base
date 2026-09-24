@@ -47,11 +47,13 @@ final class DiXmlTest extends TestCase
     }
 
     /**
-     * A bridge naming a dialect that is not declared is passed through untouched, which for an
-     * opencode server means a caller's `max_tokens` is sent as a body field the server silently
-     * ignores. The empty map is what turns that into an error instead, so its absence has to fail.
+     * The opencode server's message endpoint has no sampling options, and every consumer sets
+     * them without knowing which backend was picked; this module's own Test Connection sends
+     * `max_tokens`. So the `opencode_server` dialect maps none and ignores all four. Losing either
+     * half fails: a mapping would send a body field the server ignores anyway, and a missing
+     * `ignore` entry turns a harmless option back into an error on every call.
      */
-    public function test_the_opencode_server_dialect_is_declared_with_an_empty_map(): void
+    public function test_the_opencode_server_dialect_maps_nothing_and_ignores_every_universal_option(): void
     {
         $dialect = $this->config->xpath(
             '//type[@name="MageOS\AiBase\Model\Client\BridgeRegistry"]/arguments/argument[@name="bridges"]'
@@ -59,11 +61,18 @@ final class DiXmlTest extends TestCase
         )[0] ?? null;
         self::assertSame('opencode_server', (string) $dialect);
 
-        $map = $this->config->xpath(
-            '//type[@name="MageOS\AiBase\Model\Client\OptionNormalizer"]/arguments/argument[@name="dialects"]'
-            . '/item[@name="opencode_server"]/item[@name="map"]',
-        );
+        $base = '//type[@name="MageOS\AiBase\Model\Client\OptionNormalizer"]/arguments/argument[@name="dialects"]'
+            . '/item[@name="opencode_server"]';
+
+        $map = $this->config->xpath($base . '/item[@name="map"]');
         self::assertCount(1, $map, 'The opencode_server dialect must declare a map.');
         self::assertCount(0, $map[0]->children(), 'The opencode_server map must stay empty.');
+
+        $ignored = array_map(
+            static fn (\SimpleXMLElement $item): string => (string) $item['name'],
+            $this->config->xpath($base . '/item[@name="ignore"]/item') ?: [],
+        );
+        sort($ignored);
+        self::assertSame(['max_tokens', 'stop', 'temperature', 'top_p'], $ignored);
     }
 }

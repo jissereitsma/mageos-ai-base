@@ -381,8 +381,12 @@ throw-away session:
 - **What it gives up.** Tool calling (the server's agent owns tools, and this bridge switches them
   off), real streaming (the server answers once the agent has finished; a streaming caller gets
   the whole answer as one chunk), and every universal option: the message endpoint has no
-  `max_tokens`, `temperature`, `top_p` or `stop`, so the `opencode_server` dialect declares an
-  empty map and each one is refused rather than silently ignored.
+  `max_tokens`, `temperature`, `top_p` or `stop`, so the `opencode_server` dialect maps none of
+  them and lists all four under `ignore`: they are dropped before the request. Refusing them was the
+  first design, and it broke every consumer that sets one without knowing which backend an
+  administrator picked, this module's own Test Connection included. A dropped option can make an
+  answer longer or less deterministic than asked for, never wrong; an option a provider cannot
+  honour *and* whose loss would change the meaning of a call should stay refused.
 - **What it gains.** The server has already done the provider integration: through one entry an
   administrator reaches Claude, GPT, and local models, with credentials that stay on the server.
 
