@@ -156,12 +156,39 @@ final class OptionNormalizerTest extends TestCase
         self::assertSame($options, $this->subject()->normalize('some_third_party', $options));
     }
 
+    /**
+     * A dialect with an empty map is a provider that accepts none of the universal options. That
+     * has to refuse each one, not fall back to passing it through the way an undeclared dialect
+     * does: an opencode server ignores unknown body fields, so a pass-through cap would be dropped
+     * without a word.
+     *
+     * @param string $option
+     * @param mixed $value
+     */
+    #[\PHPUnit\Framework\Attributes\TestWith(['max_tokens', 400])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['temperature', 0.2])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['top_p', 0.9])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['stop', 'END'])]
+    public function test_a_dialect_with_an_empty_map_refuses_every_universal_option(string $option, mixed $value): void
+    {
+        $this->expectException(AiRequestNotSentException::class);
+        $this->expectExceptionMessage('opencode-custom');
+
+        $this->subject()->normalize('opencode-custom', [$option => $value]);
+    }
+
+    public function test_a_dialect_with_an_empty_map_still_passes_other_options_through(): void
+    {
+        self::assertSame(['stream' => true], $this->subject()->normalize('opencode-custom', ['stream' => true]));
+    }
+
     private function subject(): OptionNormalizer
     {
         return new OptionNormalizer(
             new BridgeRegistry([
                 'openai' => ['dialect' => 'openai_responses'],
                 'anthropic' => ['dialect' => 'anthropic_messages'],
+                'opencode-custom' => ['dialect' => 'opencode_server'],
                 'some_third_party' => ['factory' => 'Their\\Own\\Factory'],
             ]),
             [
@@ -181,6 +208,8 @@ final class OptionNormalizerTest extends TestCase
                     // A string, because that is literally what di.xml's `number` interpreter yields.
                     'defaults' => ['max_tokens' => '4096'],
                 ],
+                // What `<item name="map" xsi:type="array"/>` yields: declared, and empty.
+                'opencode_server' => ['map' => []],
             ]
         );
     }

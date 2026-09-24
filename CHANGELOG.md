@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **OpenCode Custom provider** (`opencode-custom`, `AiServices\OpenCodeCustom`): a self-hosted
+  `opencode serve` instance as an AI backend, with base URL (default `http://127.0.0.1:4096`),
+  username (default `opencode`), server password (stored encrypted under `api_key`), an optional
+  agent and a free-text `providerID/modelID` model. **Refresh Models** lists every model the server
+  has configured, from `GET /config/providers`. Its bridge, the new
+  `mage-os/library-ai-opencode-custom-platform`, speaks the server's session API rather than Chat
+  Completions: one throw-away session per call, created with every permission denied, prompted with
+  every tool switched off, and deleted afterwards. No tool calling, no incremental streaming, and
+  the universal `max_tokens` / `temperature` / `top_p` / `stop` options are refused through the new
+  empty-map `opencode_server` dialect, since the server's message endpoint accepts none of them.
+  Token counts come from the server's own per-message accounting.
+- A stored `username` and `agent` are now passed by name to any bridge factory that declares them,
+  alongside `base_url` (`Model\Client\ClientFactory::ROW_ARGUMENTS`). Same rules as `base_url`:
+  only on the default dispatch arm, only when non-empty.
 - **OpenCode Zen provider** (`opencode-zen`, `AiServices\OpenCode`): the
   [OpenCode Zen](https://opencode.ai/docs/zen/) gateway is now one of the registered AI backends,
   with an API key, an optional base URL and a free-text model field, and **Refresh Models** reading

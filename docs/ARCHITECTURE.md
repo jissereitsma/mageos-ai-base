@@ -323,7 +323,7 @@ quarantines that churn to two classes; signatures are verified against **v0.13.0
 re-verified on upgrade — which is why the require is pinned to `^0.13` rather than left open.
 
 Consequences: consumers depend on `AiClientInterface` only; bridges are still FQCN strings
-resolved lazily with guards, because the eight non-required providers remain optional and a
+resolved lazily with guards, because the nine non-required providers remain optional and a
 store may remove the required bridges via `replace`; native implementations can replace the
 whole layer via a `<preference>` without touching consumers. Note that pure `class_exists`
 checks on `*Factory` names are unreliable inside Magento test/codegen environments (factories
@@ -359,6 +359,37 @@ The remaining limitation is deliberate and documented: Zen fans its catalogue ou
 and a `BridgeRegistry` entry carries exactly one request-option `dialect`. Routing per model family
 inside the bridge would leave that one dialect wrong for half the models, so the bridge speaks Chat
 Completions only and the other families fail against the gateway, with the gateway's own message.
+
+### Decision: a stateful agent server as a stateless provider
+
+`opencode-custom` points the bundled client at a self-hosted `opencode serve` instance. That server
+is not a completion API: it is opencode's agent, reached over a session API (`POST /session`,
+`POST /session/{id}/message`), answering through whichever providers it has configured, and by
+default allowed to read, edit and run commands on the machine it runs on. The bridge
+(`mage-os/library-ai-opencode-custom-platform`) maps one `AiClientInterface` call onto one
+throw-away session:
+
+- **Isolation first.** Each session is created with a deny-everything permission ruleset, and each
+  prompt is sent with every tool switched off. Two switches rather than one, because the server
+  (1.18.32) silently ignores request fields it does not recognise: a renamed option in a later
+  release would turn one of them into a no-op without an error. Whether a real model is then
+  actually unable to reach a tool **has not been verified against a live model**; both fields are
+  asserted on the wire in the bridge's unit tests.
+- **No state carried.** The session is deleted in a `finally`, success or not. Conversation history
+  therefore travels inside the one prompt, flattened into a labelled transcript; system messages
+  use the server's own `system` field.
+- **What it gives up.** Tool calling (the server's agent owns tools, and this bridge switches them
+  off), real streaming (the server answers once the agent has finished; a streaming caller gets
+  the whole answer as one chunk), and every universal option: the message endpoint has no
+  `max_tokens`, `temperature`, `top_p` or `stop`, so the `opencode_server` dialect declares an
+  empty map and each one is refused rather than silently ignored.
+- **What it gains.** The server has already done the provider integration: through one entry an
+  administrator reaches Claude, GPT, and local models, with credentials that stay on the server.
+
+Answers pass through the server's agent, so they carry its system prompt and the `AGENTS.md` of the
+directory the server runs in unless the row names a plain agent (`agent` field). An upstream failure
+is reported by the server as HTTP 200 with the error on the message; the bridge raises it as the
+matching platform exception, so it reaches `SymfonyAiClient` exactly like any other bridge's error.
 
 ### Why there is an escape hatch anyway
 

@@ -84,9 +84,20 @@ install one only when you use that provider, e.g.:
 composer require symfony/ai-gemini-platform
 ```
 
-One provider's bridge does not come from Symfony: upstream has released none for OpenCode, so
-Mage-OS ships it as `mage-os/library-ai-opencode-zen-platform`. It is a soft dependency like the rest,
-and the admin form names it the same way.
+Two providers' bridges do not come from Symfony: upstream has released none for OpenCode, so
+Mage-OS ships `mage-os/library-ai-opencode-zen-platform` (the hosted OpenCode Zen gateway) and
+`mage-os/library-ai-opencode-custom-platform` (a self-hosted `opencode serve` instance). They are
+soft dependencies like the rest, and the admin form names them the same way.
+
+**OpenCode Custom** talks to your own opencode server rather than a hosted API. Its credential is
+the server's password (`OPENCODE_SERVER_PASSWORD`), models are named `providerID/modelID` exactly
+as the server routes them (`anthropic/claude-sonnet-4-6`), and **Refresh Models** lists every model
+the server has configured. Every call opens a throw-away session with all tools switched off and
+all permissions denied, then deletes it. Tool calling and the universal `max_tokens` /
+`temperature` / `top_p` / `stop` options are not available through it. If Magento runs in Docker,
+start the server with `--hostname 0.0.0.0` and a password, and use
+`http://host.docker.internal:4096` as the base URL. Set **Agent** to a plain agent defined in the
+server's own config to keep opencode's coding-assistant prompt out of the answers.
 
 > **symfony/ai-platform is experimental.** Experimental features are not covered by Symfony's
 > [Backward Compatibility Promise](https://symfony.com/doc/current/contributing/code/bc.html).
@@ -248,7 +259,7 @@ provider's current model list live (using the saved credentials) and updates the
 field — refreshing is strictly manual; the module never fetches model lists automatically
 or on a schedule. Where the model field is a dropdown (OpenAI, Anthropic) the fetched
 list replaces its options. Where it is free text because the catalogue cannot be known ahead
-of time (OpenRouter and OpenCode Zen, and self-hosted Ollama and LM Studio) the list is offered as autocomplete
+of time (OpenRouter and OpenCode Zen, and self-hosted OpenCode Custom, Ollama and LM Studio) the list is offered as autocomplete
 suggestions, so you can still type a model the provider has not listed. Other backends
 (e.g. Azure, whose listing endpoint is resource-specific) simply
 don't show the button. The fetched list is stored per service code (with a fetched-at

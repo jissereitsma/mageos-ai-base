@@ -100,7 +100,9 @@ Use snake_case. Established names — reuse them, several code paths key on them
 |---|---|
 | `api_key` | Credential (encrypted, masked in the form) |
 | `model` | Selected model; for Azure this doubles as the deployment name |
-| `base_url` | Local-runtime endpoint (Ollama, LM Studio), or a hosted provider's endpoint override (OpenCode Zen) |
+| `base_url` | Local-runtime endpoint (Ollama, LM Studio), a hosted provider's endpoint override (OpenCode Zen), or a self-hosted server's address (OpenCode Custom) |
+| `username` | Login for a self-hosted server that has one (OpenCode Custom) |
+| `agent` | Which agent a self-hosted agent server should answer through (OpenCode Custom) |
 | `endpoint` | Hosted resource endpoint (Azure) |
 | `api_version` | Optional API version override (Azure) |
 
@@ -165,7 +167,7 @@ bridge omits it and is labelled unsupported instead.
 
 `factory` does **not** have to be a Symfony class, and `package` does not have to be a `symfony/*`
 package. Upstream releases one bridge per provider and has released none for OpenCode, so this
-module registers `MageOS\AiOpenCodePlatform\Factory` from `mage-os/library-ai-opencode-zen-platform`
+module registers `MageOS\AiOpenCodeZenPlatform\Factory` from `mage-os/library-ai-opencode-zen-platform`
 — a bridge built on `symfony/ai-generic-platform` — through this same entry, and everything that
 reads the registry treats it identically. Write your own the same way when a provider has no
 upstream bridge; the only contract is a static `createPlatform()` that returns a platform object.
@@ -175,12 +177,16 @@ credential **positionally** and everything else by name. A hosted provider's `cr
 must therefore take the API key first, as every Symfony hosted bridge does. Note that
 `Symfony\AI\Platform\Bridge\Generic\Factory` does *not* — it takes the base URL first — so a bridge
 delegating to it needs its own wrapper with the hosted parameter order, which is what
-`LmStudio\Factory` and `MageOS\AiOpenCodePlatform\Factory` both are.
+`LmStudio\Factory` and `MageOS\AiOpenCodeZenPlatform\Factory` both are. A bridge that is not an
+HTTP completion API at all is fine too: `MageOS\AiOpenCodeCustomPlatform\Factory` drives a
+self-hosted opencode server's session API behind the same `createPlatform()` shape.
 
-**Base URL.** If your factory declares a parameter named `baseUrl`, a stored `base_url` field on
-the service row is passed to it by name. That is how a hosted provider behind a proxy, or a gateway
-an organisation runs itself, is reached without a bridge of its own. It applies only to providers
-that go through the default dispatch arm: the local runtimes (Ollama, LM Studio) pass their
+**Row fields.** If your factory declares a parameter named `baseUrl`, `username` or `agent`, the
+stored `base_url`, `username` or `agent` field on the service row is passed to it by name, when
+non-empty (`Model\Client\ClientFactory::ROW_ARGUMENTS`). That is how a hosted provider behind a
+proxy, or a gateway an organisation runs itself, is reached without a bridge of its own, and how a
+self-hosted server gets its login and agent. It applies only to providers that go through the
+default dispatch arm: the local runtimes (Ollama, LM Studio) pass their
 endpoint positionally, and passing it by name as well would raise *"Named parameter $baseUrl
 overwrites previous argument"* — LM Studio's first parameter really is spelled `baseUrl`.
 

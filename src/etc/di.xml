@@ -90,6 +90,7 @@
                 <item name="lmstudio" xsi:type="object">MageOS\AiBase\AiServices\LmStudio</item>
                 <item name="ollama" xsi:type="object">MageOS\AiBase\AiServices\Ollama</item>
                 <item name="opencode-zen" xsi:type="object">MageOS\AiBase\AiServices\OpenCode</item>
+                <item name="opencode-custom" xsi:type="object">MageOS\AiBase\AiServices\OpenCodeCustom</item>
                 <item name="openrouter" xsi:type="object">MageOS\AiBase\AiServices\OpenRouter</item>
                 <item name="openai" xsi:type="object">MageOS\AiBase\AiServices\OpenAi</item>
             </argument>
@@ -163,9 +164,23 @@
                      extends a catalogue *with* is the administrator's own model choice, and here
                      that choice is never rejected to begin with. -->
                 <item name="opencode-zen" xsi:type="array">
-                    <item name="factory" xsi:type="string">MageOS\AiOpenCodePlatform\Factory</item>
+                    <item name="factory" xsi:type="string">MageOS\AiOpenCodeZenPlatform\Factory</item>
                     <item name="package" xsi:type="string">mage-os/library-ai-opencode-zen-platform</item>
                     <item name="dialect" xsi:type="string">openai_chat</item>
+                </item>
+                <!-- OpenCode Custom: a self-hosted `opencode serve` instance. Not an OpenAI-compatible
+                     endpoint but an agent server with a session API, so the bridge opens a session
+                     per call, prompts it with tools switched off, and deletes it again. Also a
+                     Mage-OS package, for the same reason as the Zen one above.
+
+                     No `catalog`: models are `providerID/modelID` pairs from whatever providers the
+                     server has configured, which only the server knows. Its own dialect, because
+                     the message endpoint takes none of the universal options; see the
+                     `opencode_server` entry on OptionNormalizer below. -->
+                <item name="opencode-custom" xsi:type="array">
+                    <item name="factory" xsi:type="string">MageOS\AiOpenCodeCustomPlatform\Factory</item>
+                    <item name="package" xsi:type="string">mage-os/library-ai-opencode-custom-platform</item>
+                    <item name="dialect" xsi:type="string">opencode_server</item>
                 </item>
                 <item name="openrouter" xsi:type="array">
                     <item name="factory" xsi:type="string">Symfony\AI\Platform\Bridge\OpenRouter\Factory</item>
@@ -241,6 +256,14 @@
                     <item name="lists" xsi:type="array">
                         <item name="stop" xsi:type="string">stop</item>
                     </item>
+                </item>
+                <!-- A self-hosted opencode server's message endpoint accepts no sampling options at
+                     all (verified against its OpenAPI spec at 1.18.32: model, agent, system, tools,
+                     parts, format, variant). The map is deliberately empty, so every universal
+                     option is refused with an error naming the provider, rather than being sent as
+                     a body field the server rejects or passed through and silently ignored. -->
+                <item name="opencode_server" xsi:type="array">
+                    <item name="map" xsi:type="array"/>
                 </item>
                 <!-- Ollama's bridge moves everything it does not recognise as a top-level key into
                      the nested `options` object for us, so only the name has to change. -->

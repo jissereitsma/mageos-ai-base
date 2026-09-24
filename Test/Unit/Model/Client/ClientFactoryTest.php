@@ -46,6 +46,7 @@ final class ClientFactoryTest extends TestCase
         RecordingLocalRuntimeFactory::$baseUrl = null;
         RecordingBaseUrlFirstFactory::$baseUrl = null;
         RecordingBaseUrlFirstFactory::$calls = 0;
+        RecordingServerFactory::$arguments = [];
     }
 
     /**
@@ -593,6 +594,93 @@ final class ClientFactoryTest extends TestCase
     }
 
     /**
+     * A self-hosted opencode server has its own login and answers through a named agent. The row
+     * holds both, the bridge declares both, and they have to arrive by name next to the password.
+     */
+    public function test_create_passes_a_servers_username_and_agent_to_a_bridge_that_declares_them(): void
+    {
+        $this->serviceSelector->method('getByCode')->with('opencode-custom')->willReturn([
+            new AiService('row_server', 'opencode-custom', [
+                'api_key'  => 'server-password',
+                'model'    => 'anthropic/claude-sonnet-4-6',
+                'base_url' => 'http://host.docker.internal:4096/',
+                'username' => ' shop ',
+                'agent'    => 'magento',
+            ]),
+        ]);
+        $this->clientFactory->method('create')->willReturn($this->createMock(SymfonyAiClient::class));
+
+        $this->newSubject(new BridgeRegistry([
+            'opencode-custom' => [
+                'factory' => RecordingServerFactory::class,
+                'package' => 'mage-os/library-ai-opencode-custom-platform',
+            ],
+        ]))->create('opencode-custom');
+
+        self::assertSame(
+            [
+                'apiKey'   => 'server-password',
+                'baseUrl'  => 'http://host.docker.internal:4096',
+                'username' => 'shop',
+                'agent'    => 'magento',
+            ],
+            RecordingServerFactory::$arguments,
+        );
+    }
+
+    /**
+     * Left empty, the agent and username belong to the server: its default agent, its default
+     * login. Sending an empty string instead would name an agent called "".
+     */
+    public function test_create_leaves_an_empty_username_and_agent_to_the_bridge_defaults(): void
+    {
+        $this->serviceSelector->method('getByCode')->with('opencode-custom')->willReturn([
+            new AiService('row_server', 'opencode-custom', [
+                'api_key'  => '',
+                'model'    => 'anthropic/claude-sonnet-4-6',
+                'username' => '',
+                'agent'    => '  ',
+            ]),
+        ]);
+        $this->clientFactory->method('create')->willReturn($this->createMock(SymfonyAiClient::class));
+
+        $this->newSubject(new BridgeRegistry([
+            'opencode-custom' => [
+                'factory' => RecordingServerFactory::class,
+                'package' => 'mage-os/library-ai-opencode-custom-platform',
+            ],
+        ]))->create('opencode-custom');
+
+        self::assertSame(
+            ['apiKey' => '', 'baseUrl' => 'default', 'username' => 'default', 'agent' => 'default'],
+            RecordingServerFactory::$arguments,
+        );
+    }
+
+    /**
+     * Only a bridge that asks gets them: a username on some other row must not become an unknown
+     * named argument to a Symfony bridge that has never heard of one.
+     */
+    public function test_create_withholds_username_and_agent_from_a_bridge_that_does_not_declare_them(): void
+    {
+        $this->serviceSelector->method('getByCode')->with('anthropic')->willReturn([
+            new AiService('row_anthropic', 'anthropic', [
+                'api_key'  => 'k',
+                'model'    => 'claude-sonnet-4-5',
+                'username' => 'shop',
+                'agent'    => 'magento',
+            ]),
+        ]);
+        $this->clientFactory->method('create')->willReturn($this->createMock(SymfonyAiClient::class));
+
+        $subject = $this->newSubject(new BridgeRegistry([
+            'anthropic' => ['factory' => RecordingAnthropicFactory::class, 'package' => 'symfony/ai-anthropic-platform'],
+        ]));
+
+        self::assertInstanceOf(SymfonyAiClient::class, $subject->create('anthropic'));
+    }
+
+    /**
      * A bridge whose factory declares no base URL at all must not be handed one, however the row is
      * configured: an unknown named argument is an Error from inside the bridge.
      */
@@ -856,6 +944,33 @@ final class RecordingAnthropicFactory
         self::$apiKey = $apiKey;
         self::$modelCatalog = $modelCatalog;
         self::$baseUrl = $baseUrl;
+
+        return new \stdClass();
+    }
+}
+
+/**
+ * Stand-in for the opencode server bridge, whose factory takes the password first and then a
+ * server address, login and agent by name.
+ */
+final class RecordingServerFactory
+{
+    /** @var array<string,string> */
+    public static array $arguments = [];
+
+    public static function createPlatform(
+        string $apiKey = '',
+        ?object $httpClient = null,
+        ?object $modelCatalog = null,
+        ?object $contract = null,
+        ?object $eventDispatcher = null,
+        string $name = 'opencode-custom',
+        ?object $modelRouter = null,
+        string $baseUrl = 'default',
+        string $username = 'default',
+        string $agent = 'default',
+    ): object {
+        self::$arguments = ['apiKey' => $apiKey, 'baseUrl' => $baseUrl, 'username' => $username, 'agent' => $agent];
 
         return new \stdClass();
     }
