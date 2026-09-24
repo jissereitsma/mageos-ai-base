@@ -45,4 +45,25 @@ final class DiXmlTest extends TestCase
             self::assertNull($flag, $serviceCode);
         }
     }
+
+    /**
+     * A bridge naming a dialect that is not declared is passed through untouched, which for an
+     * opencode server means a caller's `max_tokens` is sent as a body field the server silently
+     * ignores. The empty map is what turns that into an error instead, so its absence has to fail.
+     */
+    public function test_the_opencode_server_dialect_is_declared_with_an_empty_map(): void
+    {
+        $dialect = $this->config->xpath(
+            '//type[@name="MageOS\AiBase\Model\Client\BridgeRegistry"]/arguments/argument[@name="bridges"]'
+            . '/item[@name="opencode-custom"]/item[@name="dialect"]',
+        )[0] ?? null;
+        self::assertSame('opencode_server', (string) $dialect);
+
+        $map = $this->config->xpath(
+            '//type[@name="MageOS\AiBase\Model\Client\OptionNormalizer"]/arguments/argument[@name="dialects"]'
+            . '/item[@name="opencode_server"]/item[@name="map"]',
+        );
+        self::assertCount(1, $map, 'The opencode_server dialect must declare a map.');
+        self::assertCount(0, $map[0]->children(), 'The opencode_server map must stay empty.');
+    }
 }
