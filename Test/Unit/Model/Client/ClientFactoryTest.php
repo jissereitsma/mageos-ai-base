@@ -510,8 +510,8 @@ final class ClientFactoryTest extends TestCase
      */
     public function test_create_passes_a_stored_base_url_to_a_hosted_bridge_that_accepts_one(): void
     {
-        $this->serviceSelector->method('getByCode')->with('opencode')->willReturn([
-            new AiService('row_opencode', 'opencode', [
+        $this->serviceSelector->method('getByCode')->with('opencode-zen')->willReturn([
+            new AiService('row_opencode_zen', 'opencode-zen', [
                 'api_key'  => 'zen-key',
                 'model'    => 'kimi-k3',
                 'base_url' => 'https://ai.example.com/zen/',
@@ -520,13 +520,13 @@ final class ClientFactoryTest extends TestCase
         $this->clientFactory->method('create')->willReturn($this->createMock(SymfonyAiClient::class));
 
         $subject = $this->newSubject(new BridgeRegistry([
-            'opencode' => [
+            'opencode-zen' => [
                 'factory' => RecordingAnthropicFactory::class,
-                'package' => 'mage-os/library-ai-opencode-platform',
+                'package' => 'mage-os/library-ai-opencode-zen-platform',
             ],
         ]));
 
-        $subject->create('opencode');
+        $subject->create('opencode-zen');
 
         self::assertSame('https://ai.example.com/zen', RecordingAnthropicFactory::$baseUrl);
         self::assertSame('zen-key', RecordingAnthropicFactory::$apiKey);
@@ -547,19 +547,19 @@ final class ClientFactoryTest extends TestCase
     public function test_create_leaves_a_hosted_bridge_on_its_own_host_without_a_usable_base_url(
         array $extraConfig
     ): void {
-        $this->serviceSelector->method('getByCode')->with('opencode')->willReturn([
-            new AiService('row_opencode', 'opencode', ['api_key' => 'k', 'model' => 'kimi-k3'] + $extraConfig),
+        $this->serviceSelector->method('getByCode')->with('opencode-zen')->willReturn([
+            new AiService('row_opencode_zen', 'opencode-zen', ['api_key' => 'k', 'model' => 'kimi-k3'] + $extraConfig),
         ]);
         $this->clientFactory->method('create')->willReturn($this->createMock(SymfonyAiClient::class));
 
         $subject = $this->newSubject(new BridgeRegistry([
-            'opencode' => [
+            'opencode-zen' => [
                 'factory' => RecordingAnthropicFactory::class,
-                'package' => 'mage-os/library-ai-opencode-platform',
+                'package' => 'mage-os/library-ai-opencode-zen-platform',
             ],
         ]));
 
-        $subject->create('opencode');
+        $subject->create('opencode-zen');
 
         self::assertSame('https://api.anthropic.com', RecordingAnthropicFactory::$baseUrl);
     }
@@ -598,8 +598,8 @@ final class ClientFactoryTest extends TestCase
      */
     public function test_create_withholds_a_base_url_from_a_bridge_that_does_not_accept_one(): void
     {
-        $this->serviceSelector->method('getByCode')->with('opencode')->willReturn([
-            new AiService('row_opencode', 'opencode', [
+        $this->serviceSelector->method('getByCode')->with('opencode-zen')->willReturn([
+            new AiService('row_opencode_zen', 'opencode-zen', [
                 'api_key'  => 'k',
                 'model'    => 'kimi-k3',
                 'base_url' => 'https://ai.example.com/zen',
@@ -608,13 +608,13 @@ final class ClientFactoryTest extends TestCase
         $this->clientFactory->method('create')->willReturn($this->createMock(SymfonyAiClient::class));
 
         $subject = $this->newSubject(new BridgeRegistry([
-            'opencode' => [
+            'opencode-zen' => [
                 'factory' => FakePlatformFactory::class,
-                'package' => 'mage-os/library-ai-opencode-platform',
+                'package' => 'mage-os/library-ai-opencode-zen-platform',
             ],
         ]));
 
-        self::assertInstanceOf(SymfonyAiClient::class, $subject->create('opencode'));
+        self::assertInstanceOf(SymfonyAiClient::class, $subject->create('opencode-zen'));
     }
 
     public function test_create_by_id_reports_a_missing_bridge_for_the_selected_row(): void

@@ -8,13 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **OpenCode Zen provider** (`opencode`, `AiServices\OpenCode`): the
+- **OpenCode Zen provider** (`opencode-zen`, `AiServices\OpenCode`): the
   [OpenCode Zen](https://opencode.ai/docs/zen/) gateway is now one of the registered AI backends,
   with an API key, an optional base URL and a free-text model field, and **Refresh Models** reading
   the gateway's live listing at `{base_url}/v1/models` (which Zen serves unauthenticated, so the
   list can be populated before a key is pasted). Its bridge is the one that does not come from
   Symfony: upstream has released none for OpenCode, so it ships as the new
-  `mage-os/library-ai-opencode-platform` — built on `symfony/ai-generic-platform` — and stays a
+  `mage-os/library-ai-opencode-zen-platform` — built on `symfony/ai-generic-platform` — and stays a
   `suggest` like every other optional bridge. Zen serves only part of its catalogue from Chat
   Completions (DeepSeek, MiniMax, GLM, Kimi and the free tier); `gpt-*`, `claude-*`, `gemini-*`,
   `grok-*`, `qwen*` and `jev-*` live behind other endpoints with other request shapes and cannot be

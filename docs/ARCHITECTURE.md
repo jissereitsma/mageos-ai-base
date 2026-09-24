@@ -336,7 +336,7 @@ every one of those was a `symfony/*` package. Upstream releases one bridge packa
 has released none for OpenCode, so the choice was between leaving the provider unusable through the
 bundled client — configuration-only, which the registry already supports — and shipping the bridge.
 
-It is shipped, as **`mage-os/library-ai-opencode-platform`**: a plain PHP library, MIT like the
+It is shipped, as **`mage-os/library-ai-opencode-zen-platform`**: a plain PHP library, MIT like the
 Symfony code it is built on, carrying no Magento code and needing no `setup:upgrade`. It is thin
 because it can be: OpenCode Zen speaks the OpenAI Chat Completions body, so the bridge is
 `symfony/ai-generic-platform`'s client pointed at Zen's host, plus a model catalogue. It stays a
@@ -351,7 +351,7 @@ Its model catalogue enumerates nothing and accepts any model id, which is the op
 Symfony bridge's frozen static list. Zen is a gateway: its catalogue turns over monthly and is
 published as an endpoint, so a frozen copy would reject a model an administrator can see in the
 gateway's own listing. `ClientFactory::createCatalog()` exists to paper over exactly that staleness
-for the bridges that do freeze; here there is nothing to paper over, which is why the `opencode`
+for the bridges that do freeze; here there is nothing to paper over, which is why the `opencode-zen`
 entry registers no `catalog` at all.
 
 The remaining limitation is deliberate and documented: Zen fans its catalogue out across

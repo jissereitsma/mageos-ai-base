@@ -132,8 +132,8 @@ final class ModelListFetchTest extends TestCase
         $this->fetcher->expects(self::once())->method('getJson')
             ->with('https://opencode.ai/zen/v1/models', ['Authorization' => 'Bearer zen-test'])
             ->willReturn(['data' => [
-                ['id' => 'kimi-k3', 'object' => 'model', 'owned_by' => 'opencode'],
-                ['id' => 'glm-5.3-flash', 'object' => 'model', 'owned_by' => 'opencode'],
+                ['id' => 'kimi-k3', 'object' => 'model', 'owned_by' => 'opencode-zen'],
+                ['id' => 'glm-5.3-flash', 'object' => 'model', 'owned_by' => 'opencode-zen'],
             ]]);
 
         $service = new OpenCode($this->fieldFactory, $this->fetcher);
