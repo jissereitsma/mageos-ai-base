@@ -323,11 +323,42 @@ quarantines that churn to two classes; signatures are verified against **v0.13.0
 re-verified on upgrade — which is why the require is pinned to `^0.13` rather than left open.
 
 Consequences: consumers depend on `AiClientInterface` only; bridges are still FQCN strings
-resolved lazily with guards, because the seven non-required providers remain optional and a
+resolved lazily with guards, because the eight non-required providers remain optional and a
 store may remove the required bridges via `replace`; native implementations can replace the
 whole layer via a `<preference>` without touching consumers. Note that pure `class_exists`
 checks on `*Factory` names are unreliable inside Magento test/codegen environments (factories
 are auto-generated) — hence the additional `method_exists` guard.
+
+### Decision: one bridge that is not Symfony's
+
+`BridgeRegistry` names a factory class and a composer package per service code, and until OpenCode
+every one of those was a `symfony/*` package. Upstream releases one bridge package per provider and
+has released none for OpenCode, so the choice was between leaving the provider unusable through the
+bundled client — configuration-only, which the registry already supports — and shipping the bridge.
+
+It is shipped, as **`mage-os/library-ai-opencode-platform`**: a plain PHP library, MIT like the
+Symfony code it is built on, carrying no Magento code and needing no `setup:upgrade`. It is thin
+because it can be: OpenCode Zen speaks the OpenAI Chat Completions body, so the bridge is
+`symfony/ai-generic-platform`'s client pointed at Zen's host, plus a model catalogue. It stays a
+`suggest` on this module, for the same pay-for-what-you-use reason every non-required bridge does.
+
+Kept out of this module deliberately. Putting those two classes in `src/` would have made
+`symfony/ai-generic-platform` a hard requirement of every install, including the ones that never
+configure OpenCode, and would have buried a reusable Symfony AI bridge inside a Magento module
+where no non-Magento project could reach it.
+
+Its model catalogue enumerates nothing and accepts any model id, which is the opposite of every
+Symfony bridge's frozen static list. Zen is a gateway: its catalogue turns over monthly and is
+published as an endpoint, so a frozen copy would reject a model an administrator can see in the
+gateway's own listing. `ClientFactory::createCatalog()` exists to paper over exactly that staleness
+for the bridges that do freeze; here there is nothing to paper over, which is why the `opencode`
+entry registers no `catalog` at all.
+
+The remaining limitation is deliberate and documented: Zen fans its catalogue out across
+`/v1/chat/completions`, `/v1/responses`, `/v1/messages`, `/v1/models/<id>` and `/v1/systemone`,
+and a `BridgeRegistry` entry carries exactly one request-option `dialect`. Routing per model family
+inside the bridge would leave that one dialect wrong for half the models, so the bridge speaks Chat
+Completions only and the other families fail against the gateway, with the gateway's own message.
 
 ### Why there is an escape hatch anyway
 

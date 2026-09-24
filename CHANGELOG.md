@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **OpenCode Zen provider** (`opencode`, `AiServices\OpenCode`): the
+  [OpenCode Zen](https://opencode.ai/docs/zen/) gateway is now one of the registered AI backends,
+  with an API key, an optional base URL and a free-text model field, and **Refresh Models** reading
+  the gateway's live listing at `{base_url}/v1/models` (which Zen serves unauthenticated, so the
+  list can be populated before a key is pasted). Its bridge is the one that does not come from
+  Symfony: upstream has released none for OpenCode, so it ships as the new
+  `mage-os/library-ai-opencode-platform` — built on `symfony/ai-generic-platform` — and stays a
+  `suggest` like every other optional bridge. Zen serves only part of its catalogue from Chat
+  Completions (DeepSeek, MiniMax, GLM, Kimi and the free tier); `gpt-*`, `claude-*`, `gemini-*`,
+  `grok-*`, `qwen*` and `jev-*` live behind other endpoints with other request shapes and cannot be
+  reached through this bridge, which is why the curated model list names only the former.
+- A stored `base_url` is now passed to **any** bridge factory that declares a `baseUrl` parameter,
+  not only to the local runtimes that take their endpoint positionally, so a hosted provider behind
+  a proxy or an in-house gateway can be reached without a bridge of its own. Deliberately withheld
+  from the Ollama and LM Studio dispatch arms, which already pass it positionally: LM Studio's first
+  parameter is itself spelled `baseUrl`, and naming it a second time is a fatal
+  `Error`, not a silent no-op.
 - **AI usage tracking**: every call made through `AiClientInterface` is now recorded — token
   counts and metadata only, **never prompt or response content** — and surfaced at
   **Reports > AI Token Usage** as a dashboard (totals, period-over-period change against the same

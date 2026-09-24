@@ -84,6 +84,10 @@ install one only when you use that provider, e.g.:
 composer require symfony/ai-gemini-platform
 ```
 
+One provider's bridge does not come from Symfony: upstream has released none for OpenCode, so
+Mage-OS ships it as `mage-os/library-ai-opencode-platform`. It is a soft dependency like the rest,
+and the admin form names it the same way.
+
 > **symfony/ai-platform is experimental.** Experimental features are not covered by Symfony's
 > [Backward Compatibility Promise](https://symfony.com/doc/current/contributing/code/bc.html).
 >
@@ -244,7 +248,7 @@ provider's current model list live (using the saved credentials) and updates the
 field — refreshing is strictly manual; the module never fetches model lists automatically
 or on a schedule. Where the model field is a dropdown (OpenAI, Anthropic) the fetched
 list replaces its options. Where it is free text because the catalogue cannot be known ahead
-of time (OpenRouter, and self-hosted Ollama and LM Studio) the list is offered as autocomplete
+of time (OpenRouter and OpenCode Zen, and self-hosted Ollama and LM Studio) the list is offered as autocomplete
 suggestions, so you can still type a model the provider has not listed. Other backends
 (e.g. Azure, whose listing endpoint is resource-specific) simply
 don't show the button. The fetched list is stored per service code (with a fetched-at
