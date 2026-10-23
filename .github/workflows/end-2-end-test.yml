@@ -81,6 +81,8 @@ jobs:
       E2E_MAGENTO_ROOT: /data
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       # Just the container. It serves the store on port 80 itself, so there is no proxy to
       # terminate TLS and therefore no forwarded protocol to get wrong, which is what broke the

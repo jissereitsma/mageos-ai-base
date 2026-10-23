@@ -25,7 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the admin's own saved login could be autofilled into a key field and sent to the provider.
 - Parameters that carry a decrypted credential are marked `#[\SensitiveParameter]`, so they are
   redacted from stack traces and error logs.
-- CI runs with a read-only token, pins every action to a commit SHA, and runs `composer audit`.
+- CI runs with a read-only token, pins every action to a commit SHA, does not keep the checkout
+  token on disk, and runs `composer audit` and [zizmor](https://docs.zizmor.sh/) on its own workflows.
 
 ## [1.0.0] - 2026-10-08
 
