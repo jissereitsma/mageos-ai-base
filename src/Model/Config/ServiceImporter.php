@@ -66,8 +66,11 @@ class ServiceImporter implements ServiceImporterInterface
     /**
      * @inheritdoc
      */
-    public function import(string $serviceCode, array $configuration, ?string $label = null): string
-    {
+    public function import(
+        string $serviceCode,
+        #[\SensitiveParameter] array $configuration,
+        ?string $label = null,
+    ): string {
         $values = $this->validate($this->getService($serviceCode), $configuration);
         $this->assertNotPinned();
         $stored = $this->getStoredDefault();
@@ -133,14 +136,17 @@ class ServiceImporter implements ServiceImporterInterface
      * empty value is left out because the form treats an absent field and an empty one alike, and
      * leaving it out keeps it from deciding whether an existing row matches. Nothing left at all is
      * refused too: an empty row would match every existing row of the service and import nothing.
+     * An endpoint that is not an http(s) URL is refused by the same rule the admin form applies.
      *
      * @param AiServiceConfigurationInterface $service
      * @param array<mixed> $configuration
      * @return array<string,string>
      * @throws InputException
      */
-    private function validate(AiServiceConfigurationInterface $service, array $configuration): array
-    {
+    private function validate(
+        AiServiceConfigurationInterface $service,
+        #[\SensitiveParameter] array $configuration,
+    ): array {
         $declared = $this->getFieldNames($service);
         $unknown = array_diff(array_map('strval', array_keys($configuration)), $declared);
         if ($unknown !== []) {
@@ -166,6 +172,14 @@ class ServiceImporter implements ServiceImporterInterface
         if ($values === []) {
             throw new InputException(__(
                 'There is nothing to import into the AI service "%1": every value is empty.',
+                $service->getCode(),
+            ));
+        }
+        $invalidFields = $this->sensitiveDataProcessor->getNonHttpEndpointFieldNames($service->getCode(), $values);
+        if ($invalidFields !== []) {
+            throw new InputException(__(
+                'The "%1" field of the %2 AI service has to be an http:// or https:// URL.',
+                implode('", "', $invalidFields),
                 $service->getCode(),
             ));
         }
@@ -257,7 +271,7 @@ class ServiceImporter implements ServiceImporterInterface
      * @param array<string,string> $values
      * @return string|null
      */
-    private function findMatchingRow(array $rows, string $serviceCode, array $values): ?string
+    private function findMatchingRow(array $rows, string $serviceCode, #[\SensitiveParameter] array $values): ?string
     {
         foreach ($rows as $rowId => $row) {
             $configuration = is_array($row) ? ($row[$serviceCode] ?? null) : null;
@@ -279,7 +293,7 @@ class ServiceImporter implements ServiceImporterInterface
      * @param array<string,string> $values
      * @return bool
      */
-    private function holdsEvery(array $decrypted, array $values): bool
+    private function holdsEvery(#[\SensitiveParameter] array $decrypted, #[\SensitiveParameter] array $values): bool
     {
         return array_filter(
             $values,
@@ -417,7 +431,7 @@ class ServiceImporter implements ServiceImporterInterface
      * @param list<string> $encryptedFields
      * @return bool
      */
-    private function hasAnythingToImport(array $values, array $encryptedFields): bool
+    private function hasAnythingToImport(#[\SensitiveParameter] array $values, array $encryptedFields): bool
     {
         $relevant = $encryptedFields === [] ? $values : array_intersect_key($values, array_flip($encryptedFields));
 

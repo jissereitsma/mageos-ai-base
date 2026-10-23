@@ -174,6 +174,19 @@ final class EncryptedServicesTest extends TestCase
         ];
     }
 
+    public function test_a_row_whose_base_url_is_not_http_is_refused_and_named(): void
+    {
+        $model = $this->savingModel($this->storedJson());
+        $model->setValue($this->formPost([
+            '_openai' => ['openai' => ['api_key' => 'sk-new', 'model' => 'gpt-4o', 'base_url' => 'ftp://files.test']],
+        ]));
+
+        $this->expectException(ValidatorException::class);
+        $this->expectExceptionMessage('The "base_url" field of the openai AI service has to be an http:// or https:// URL.');
+
+        $model->beforeSave();
+    }
+
     private function model(): EncryptedServices
     {
         return (new \ReflectionClass(EncryptedServices::class))->newInstanceWithoutConstructor();

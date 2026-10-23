@@ -40,7 +40,7 @@ class HttpFetcher implements JsonFetcherInterface
     /**
      * @inheritdoc
      */
-    public function getJson(string $url, array $headers = []): array
+    public function getJson(string $url, #[\SensitiveParameter] array $headers = []): array
     {
         $client = $this->httpClientFactory->create();
 

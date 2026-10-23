@@ -74,6 +74,25 @@ test.describe('Row actions', () => {
         expect(width).toBeGreaterThan(300);
     });
 
+    /**
+     * The success line is a translatable phrase with placeholders, filled in by the browser. A reply
+     * containing "$&" proves the reply is inserted as text, not read as a replacement pattern.
+     */
+    test('a successful test shows the latency and the reply', async ({ page }) => {
+        const section = new AiConfigurationSection(page);
+        await section.open();
+        await section.addProvider('anthropic');
+        await section.fieldByLabel(0, 'API Key').fill('sk-not-a-real-key');
+        await section.save();
+        await page.route((url) => url.pathname.includes('/service/test'), (route) => route.fulfill({
+            json: { success: true, latency_ms: 42, response: 'OK $& done' },
+        }));
+
+        await section.row(0).locator('.action-test-connection').click();
+
+        await expect(section.row(0).locator('.ai-test-result')).toHaveText('OK (42ms): OK $& done');
+    });
+
     test('removing a row asks first, and keeps the row when the answer is no', async ({ page }) => {
         const section = new AiConfigurationSection(page);
         await section.open();

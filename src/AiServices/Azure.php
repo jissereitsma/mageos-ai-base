@@ -76,7 +76,7 @@ class Azure extends AbstractAiService
      * @param array<string,mixed> $configuration
      * @return list<mixed>
      */
-    public function getPlatformArguments(array $configuration): array
+    public function getPlatformArguments(#[\SensitiveParameter] array $configuration): array
     {
         $deployment = $this->stringValue($configuration, 'deployment');
 

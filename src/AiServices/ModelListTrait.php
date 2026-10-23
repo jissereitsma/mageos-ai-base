@@ -57,7 +57,7 @@ trait ModelListTrait
      * @param array<string,mixed> $configuration Saved service configuration
      * @return string
      */
-    private function resolveApiKey(array $configuration): string
+    private function resolveApiKey(#[\SensitiveParameter] array $configuration): string
     {
         $apiKey = $configuration['api_key'] ?? null;
 

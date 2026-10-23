@@ -100,7 +100,7 @@ class Google extends AbstractAiService implements ModelListProviderInterface
     /**
      * @inheritdoc
      */
-    public function fetchModels(array $configuration): array
+    public function fetchModels(#[\SensitiveParameter] array $configuration): array
     {
         $headers = ['x-goog-api-key' => $this->resolveApiKey($configuration)];
         $models = [];

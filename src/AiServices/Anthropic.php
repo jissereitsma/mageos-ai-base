@@ -77,7 +77,7 @@ class Anthropic extends AbstractAiService implements ModelListProviderInterface
     /**
      * @inheritdoc
      */
-    public function fetchModels(array $configuration): array
+    public function fetchModels(#[\SensitiveParameter] array $configuration): array
     {
         $response = $this->modelListFetcher->getJson(self::MODELS_URL, [
             'x-api-key' => $this->resolveApiKey($configuration),

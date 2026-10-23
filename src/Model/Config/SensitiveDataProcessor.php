@@ -77,6 +77,11 @@ class SensitiveDataProcessor
     private const ENCRYPTED_ENVELOPE_PATTERN = '/^\d+:\d+:.+$/';
 
     /**
+     * An http or https URL with a host. See getNonHttpEndpointFieldNames() for why nothing else.
+     */
+    private const HTTP_URL_PATTERN = '~^https?://[^/?#\s]+~i';
+
+    /**
      * Lazily built map of service code => [field name => descriptor].
      *
      * @var array<string,array<string,FieldDescriptorInterface>>|null
@@ -100,7 +105,7 @@ class SensitiveDataProcessor
      * @param array<array-key,mixed> $configuration
      * @return array<array-key,mixed>
      */
-    public function encryptRow(string $serviceCode, array $configuration): array
+    public function encryptRow(string $serviceCode, #[\SensitiveParameter] array $configuration): array
     {
         return $this->processRow(
             $serviceCode,
@@ -155,7 +160,7 @@ class SensitiveDataProcessor
      * @param array<array-key,mixed> $previous Previously stored (still encrypted) configuration row
      * @return array<array-key,mixed>
      */
-    public function restoreRow(string $serviceCode, array $configuration, array $previous): array
+    public function restoreRow(string $serviceCode, #[\SensitiveParameter] array $configuration, array $previous): array
     {
         $redirected = $this->isRedirected($serviceCode, $configuration, $previous);
 
@@ -179,6 +184,30 @@ class SensitiveDataProcessor
         }
 
         return $configuration;
+    }
+
+    /**
+     * Names of the endpoint fields in a row that hold something other than an http(s) URL.
+     *
+     * The two HTTP clients behind a row disagree on what they accept: the chat client refuses
+     * anything but http and https at call time, while Refresh Models goes through Magento's cURL
+     * client, which also speaks FTP. Refusing at save time keeps one rule for both, and tells the
+     * administrator while the field is still in front of them. A URL without a scheme is refused
+     * too, since neither client can call it. An empty endpoint means the provider's default.
+     *
+     * @param string $serviceCode
+     * @param array<array-key,mixed> $configuration Submitted configuration row
+     * @return list<string>
+     */
+    public function getNonHttpEndpointFieldNames(
+        string $serviceCode,
+        #[\SensitiveParameter] array $configuration,
+    ): array {
+        return array_values(array_filter(
+            $this->getEndpointFieldNames($serviceCode),
+            fn (string $key): bool => $this->normalizeEndpoint($configuration[$key] ?? null) !== ''
+                && preg_match(self::HTTP_URL_PATTERN, $this->normalizeEndpoint($configuration[$key])) !== 1,
+        ));
     }
 
     /**
@@ -228,8 +257,11 @@ class SensitiveDataProcessor
      * @param array<array-key,mixed> $previous Previously stored configuration row
      * @return bool
      */
-    private function isRedirected(string $serviceCode, array $configuration, array $previous): bool
-    {
+    private function isRedirected(
+        string $serviceCode,
+        #[\SensitiveParameter] array $configuration,
+        array $previous,
+    ): bool {
         return array_filter(
             $this->getEndpointFieldNames($serviceCode),
             fn (string $key): bool => $this->normalizeEndpoint($previous[$key] ?? null)
@@ -282,8 +314,11 @@ class SensitiveDataProcessor
      * @param callable $processor
      * @return array<array-key,mixed>
      */
-    private function processRow(string $serviceCode, array $configuration, callable $processor): array
-    {
+    private function processRow(
+        string $serviceCode,
+        #[\SensitiveParameter] array $configuration,
+        callable $processor,
+    ): array {
         foreach ($configuration as $key => $value) {
             if (is_string($value) && $value !== '' && $this->isSensitive($serviceCode, (string)$key)) {
                 $configuration[$key] = $processor($value);
@@ -363,7 +398,7 @@ class SensitiveDataProcessor
      * @param string $value
      * @return bool
      */
-    public function isEncrypted(string $value): bool
+    public function isEncrypted(#[\SensitiveParameter] string $value): bool
     {
         return (bool)preg_match(self::ENCRYPTED_ENVELOPE_PATTERN, $value);
     }
