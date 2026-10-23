@@ -311,7 +311,7 @@ class ClientFactory implements AiClientFactoryInterface
      * @param array<string,mixed> $config Stored service configuration
      * @return array<string,mixed> Argument name => value
      */
-    private function optionalArguments(string $factoryClass, string $code, array $config): array
+    private function optionalArguments(string $factoryClass, string $code, #[\SensitiveParameter] array $config): array
     {
         $accepted = [];
         foreach ((new \ReflectionMethod($factoryClass, 'createPlatform'))->getParameters() as $parameter) {
@@ -360,7 +360,7 @@ class ClientFactory implements AiClientFactoryInterface
      * @param string $default
      * @return string
      */
-    private function stringValue(array $config, string $key, string $default = ''): string
+    private function stringValue(#[\SensitiveParameter] array $config, string $key, string $default = ''): string
     {
         $value = $config[$key] ?? null;
 
@@ -481,7 +481,7 @@ class ClientFactory implements AiClientFactoryInterface
      * @param array<string,mixed> $config Stored service configuration
      * @return list<mixed>
      */
-    private function platformArguments(string $code, array $config): array
+    private function platformArguments(string $code, #[\SensitiveParameter] array $config): array
     {
         $provider = $this->serviceRegistry->get($code);
 

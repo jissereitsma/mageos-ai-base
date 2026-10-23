@@ -66,7 +66,7 @@ class OpenRouter extends AbstractAiService implements ModelListProviderInterface
     /**
      * @inheritdoc
      */
-    public function fetchModels(array $configuration): array
+    public function fetchModels(#[\SensitiveParameter] array $configuration): array
     {
         $headers = [];
         $apiKey = $this->resolveApiKey($configuration);

@@ -189,6 +189,14 @@ final class ServiceImporterTest extends TestCase
         $this->subject->import('openai', ['apikey' => 'sk-imported']);
     }
 
+    public function test_an_import_whose_base_url_is_not_http_is_refused(): void
+    {
+        $this->expectException(InputException::class);
+        $this->expectExceptionMessage('"base_url"');
+
+        $this->subject->import('ollama', ['base_url' => 'ftp://ollama:11434']);
+    }
+
     public function test_an_import_with_only_empty_values_is_refused(): void
     {
         $this->expectException(InputException::class);

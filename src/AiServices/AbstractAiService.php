@@ -79,7 +79,7 @@ abstract class AbstractAiService implements AiServiceConfigurationInterface, Pla
      * @param array<string,mixed> $configuration
      * @return list<mixed>
      */
-    public function getPlatformArguments(array $configuration): array
+    public function getPlatformArguments(#[\SensitiveParameter] array $configuration): array
     {
         return [$this->stringValue($configuration, self::FIELD_API_KEY)];
     }
@@ -168,8 +168,11 @@ abstract class AbstractAiService implements AiServiceConfigurationInterface, Pla
      * @param string $default
      * @return string
      */
-    protected function stringValue(array $configuration, string $field, string $default = ''): string
-    {
+    protected function stringValue(
+        #[\SensitiveParameter] array $configuration,
+        string $field,
+        string $default = '',
+    ): string {
         $value = $configuration[$field] ?? null;
 
         return is_string($value) ? $value : $default;
@@ -182,7 +185,7 @@ abstract class AbstractAiService implements AiServiceConfigurationInterface, Pla
      * @param string $default
      * @return string
      */
-    protected function resolveBaseUrl(array $configuration, string $default): string
+    protected function resolveBaseUrl(#[\SensitiveParameter] array $configuration, string $default): string
     {
         $baseUrl = trim($this->stringValue($configuration, self::FIELD_BASE_URL));
 

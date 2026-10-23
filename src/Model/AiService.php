@@ -16,6 +16,7 @@ class AiService implements AiServiceInterface
     public function __construct(
         private readonly string $id,
         private readonly string $code,
+        #[\SensitiveParameter]
         private readonly array $configuration
     ) {
     }

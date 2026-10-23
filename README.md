@@ -39,10 +39,82 @@ bin/magento setup:upgrade
 
 Requires Magento 2.4.8+ or Mage-OS 1.1+, and PHP 8.2+. OpenAI and Anthropic work out of the box; every
 other provider needs its Symfony AI bridge package, which the admin form names when it's missing.
+The module only adds admin screens, so it works the same with Luma, Hyvä or a headless storefront.
 
 The client is built on [symfony/ai-platform](https://github.com/symfony/ai) 0.14, which is
 experimental. This module's `Api` interfaces absorb its changes; code that reaches the Symfony
 platform directly does not.
+
+## Getting started
+
+1. Go to **Stores > Configuration > Mage-OS > AI Configuration** and open **Services**.
+2. Click **Add Service**, choose your provider, for example **OpenAI**, paste the API key and pick a
+   model.
+3. Click **Save Config**. Test Connection and Refresh Models only work on saved rows.
+4. Click **Test Connection** on the row. It sends a short prompt and shows the latency and the
+   reply. A failure says whether the key was rejected, the host was unreachable or the provider is
+   rate limiting you.
+5. Open the module that uses AI and pick this service in its own settings. Modules that offer
+   **Automatic** use the first enabled service in the list whose provider is installed.
+6. After the first calls, **Reports > Mage-OS AI > AI Token Usage** shows the tokens each module used.
+
+## Configuration
+
+### Stores > Configuration > Mage-OS > AI Configuration > Services
+
+Scope: Default, Website and Store View. Each row is one configured service; add the same provider
+more than once for separate accounts or models. The pencil names a row, and the toggle takes it out
+of use without deleting its key.
+
+| Provider | Fields |
+|----------|--------|
+| OpenAI, Anthropic, Google Gemini, DeepSeek, OpenRouter | API Key, Model |
+| Azure OpenAI | API Key, Endpoint (`https://<resource>.openai.azure.com`), Model |
+| Hugging Face | API Key, Model (free text) |
+| Ollama | Base URL (default `http://localhost:11434`), Model (free text) |
+| LM Studio | Base URL (default `http://localhost:1234`), Model (free text) |
+| OpenAI-Compatible | Base URL, API Key, Model (free text) |
+
+API keys are encrypted and shown as `******` once saved. **Refresh Models** replaces a row's model
+suggestions with the provider's live list, for OpenAI, Anthropic, Gemini, OpenRouter, Ollama and LM
+Studio.
+
+### Stores > Configuration > Mage-OS > AI Configuration > Usage Tracking
+
+Scope: Default only.
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| Enable Usage Tracking | Yes | Records token counts for every call. Off stops recording; history already collected stays. |
+| Raw Usage Retention (Days) | 30 | How long individual calls are kept before they are rolled up into daily totals. |
+| Daily Usage Retention (Days) | 730 | How long the daily totals are kept. |
+| Cleanup Cron Schedule | `0 3 * * *` | When the roll-up and cleanup run. Empty means never. |
+
+The [Usage Tracking](docs/USAGE-TRACKING.md) guide covers what is recorded and how retention works.
+
+## Where it shows up
+
+- **Stores > Configuration > Mage-OS > AI Configuration**: the services and usage settings above.
+  Needs the *Mage-OS AI Configuration* role resource.
+- **Reports > Mage-OS AI > AI Token Usage**: the dashboard and a grid of individual calls. Needs the
+  *Mage-OS AI Usage* role resource.
+- `bin/magento mageos:ai:usage`: the same numbers on the command line.
+
+## Troubleshooting
+
+- **A provider is missing from the Add Service list.** In production mode the form only offers
+  providers whose Symfony AI bridge is installed. Switch to developer mode to see the package name,
+  or `composer require` it (for example `symfony/ai-ollama-platform`) and deploy as usual.
+- **Test Connection or Refresh Models is missing on a row.** The row isn't saved yet. Save the
+  configuration first.
+- **The saved API key is gone.** Changing a row's Base URL or Endpoint drops its key in the same
+  save, so a key can't be sent to another host. Enter the key again.
+- **The form is read-only.** The services are set in `app/etc/env.php` or `config.php`, which wins
+  over the admin. Change them there.
+- **Test Connection fails with an unclear message.** The full error is written to the Magento log.
+- **A module's calls don't show up in the usage report.** Check that Enable Usage Tracking is on. A
+  module that talks to the Symfony AI platform directly instead of through this module's client
+  can't be tracked.
 
 ## Usage
 

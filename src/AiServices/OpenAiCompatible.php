@@ -58,7 +58,7 @@ class OpenAiCompatible extends AbstractAiService
      * @param array<string,mixed> $configuration
      * @return list<mixed>
      */
-    public function getPlatformArguments(array $configuration): array
+    public function getPlatformArguments(#[\SensitiveParameter] array $configuration): array
     {
         $apiKey = $this->stringValue($configuration, self::FIELD_API_KEY);
 
@@ -76,7 +76,7 @@ class OpenAiCompatible extends AbstractAiService
      * @param array<string,mixed> $configuration
      * @return string
      */
-    private function resolveBaseUrlWithoutVersion(array $configuration): string
+    private function resolveBaseUrlWithoutVersion(#[\SensitiveParameter] array $configuration): string
     {
         $baseUrl = $this->resolveBaseUrl($configuration, '');
 

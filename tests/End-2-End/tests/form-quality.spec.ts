@@ -30,12 +30,16 @@ test.describe('Form quality', () => {
         expect(unlabelled).toEqual([]);
     });
 
+    /**
+     * Browsers ignore autocomplete="off" on a password field, so only "new-password" keeps the
+     * admin's own saved login from being autofilled into the key and sent to the provider.
+     */
     test('a credential is never offered to a password manager as a login', async ({ page }) => {
         const section = new AiConfigurationSection(page);
         await section.open();
         await section.addProvider('anthropic');
 
-        await expect(section.fieldByLabel(0, 'API Key')).toHaveAttribute('autocomplete', 'off');
+        await expect(section.fieldByLabel(0, 'API Key')).toHaveAttribute('autocomplete', 'new-password');
         await expect(section.fieldByLabel(0, 'API Key')).toHaveAttribute('type', 'password');
     });
 

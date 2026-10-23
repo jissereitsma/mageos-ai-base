@@ -29,5 +29,5 @@ interface ModelListProviderInterface
      * @throws LocalizedException On HTTP, authentication or response-parsing failure,
      *         with an admin-readable message
      */
-    public function fetchModels(array $configuration): array;
+    public function fetchModels(#[\SensitiveParameter] array $configuration): array;
 }

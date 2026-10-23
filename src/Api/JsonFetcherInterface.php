@@ -29,5 +29,5 @@ interface JsonFetcherInterface
      * @return array<mixed> Decoded JSON response
      * @throws LocalizedException On transport failure, non-2xx status or invalid JSON
      */
-    public function getJson(string $url, array $headers = []): array;
+    public function getJson(string $url, #[\SensitiveParameter] array $headers = []): array;
 }

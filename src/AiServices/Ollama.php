@@ -67,7 +67,7 @@ class Ollama extends AbstractAiService implements ModelListProviderInterface
     /**
      * @inheritdoc
      */
-    public function fetchModels(array $configuration): array
+    public function fetchModels(#[\SensitiveParameter] array $configuration): array
     {
         $baseUrl = $this->resolveBaseUrl($configuration, self::DEFAULT_BASE_URL);
         $response = $this->modelListFetcher->getJson($baseUrl . '/api/tags');
@@ -95,7 +95,7 @@ class Ollama extends AbstractAiService implements ModelListProviderInterface
      * @param array<string,mixed> $configuration
      * @return list<mixed>
      */
-    public function getPlatformArguments(array $configuration): array
+    public function getPlatformArguments(#[\SensitiveParameter] array $configuration): array
     {
         return [$this->resolveBaseUrl($configuration, self::DEFAULT_BASE_URL)];
     }
