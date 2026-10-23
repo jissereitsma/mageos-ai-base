@@ -37,7 +37,7 @@ use Psr\Log\NullLogger;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\AI\Platform\Test\InMemoryPlatform;
+use Symfony\AI\Platform\Test\MockPlatformFactory;
 
 final class ClientFactoryTest extends TestCase
 {
@@ -732,7 +732,7 @@ final class ClientFactoryTest extends TestCase
         $this->usageTrackingEnabled = true;
         $this->serviceSelector->method('getByCode')->with('openai')
             ->willReturn([new AiService('row_openai', 'openai', ['api_key' => 'k', 'model' => 'gpt-4o'])]);
-        $this->clientFactory->method('create')->willReturn(new FakePlatformAwareAiClient(new InMemoryPlatform('Hi')));
+        $this->clientFactory->method('create')->willReturn(new FakePlatformAwareAiClient(MockPlatformFactory::createPlatform('Hi')));
         $this->recordingPlatformAwareClientFactory->method('create')->willReturnCallback(
             fn (array $data): RecordingPlatformAwareAiClient => new RecordingPlatformAwareAiClient(
                 $data['platformAwareDelegate'],
