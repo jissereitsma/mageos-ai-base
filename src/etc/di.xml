@@ -111,7 +111,12 @@
 
          `dialect` names the request-option shape the bridge speaks, which decides how the universal
          options are spelled on the wire (see Model\Client\OptionNormalizer below). It belongs here
-         because it is a property of the bridge, not of the provider's credentials. -->
+         because it is a property of the bridge, not of the provider's credentials.
+
+         `arguments` are fixed named parameters the factory receives on every call, for a gateway
+         that reuses another provider's bridge with different constants (Opper runs the generic
+         OpenAI-compatible bridge against its /v3/compat routes). Parameters the installed bridge
+         version does not declare are dropped, like the optional HTTP client and catalogue. -->
     <type name="MageOS\AiBase\Model\Client\BridgeRegistry">
         <arguments>
             <argument name="bridges" xsi:type="array">
@@ -178,9 +183,14 @@
                     <item name="dialect" xsi:type="string">openai_chat</item>
                 </item>
                 <item name="opper" xsi:type="array">
-                    <item name="factory" xsi:type="string">MageOS\AiBase\Model\Client\OpperFactory</item>
+                    <item name="factory" xsi:type="string">Symfony\AI\Platform\Bridge\Generic\Factory</item>
                     <item name="package" xsi:type="string">symfony/ai-generic-platform</item>
                     <item name="dialect" xsi:type="string">openai_chat</item>
+                    <item name="arguments" xsi:type="array">
+                        <item name="completionsPath" xsi:type="const">MageOS\AiBase\AiServices\Opper::COMPLETIONS_PATH</item>
+                        <item name="embeddingsPath" xsi:type="const">MageOS\AiBase\AiServices\Opper::EMBEDDINGS_PATH</item>
+                        <item name="name" xsi:type="string">opper</item>
+                    </item>
                 </item>
             </argument>
         </arguments>

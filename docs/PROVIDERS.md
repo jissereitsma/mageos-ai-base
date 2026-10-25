@@ -186,6 +186,13 @@ the mapping is safe to ship even when your bridge package is not installed. `pac
 form tells an administrator to install when the bridge is missing; a provider with no released
 bridge omits it and is labelled unsupported instead.
 
+`arguments` (optional) are fixed named parameters the factory receives on every call, filtered to
+the ones the installed bridge version declares. This is how a gateway reuses another provider's
+bridge with different constants instead of shipping a factory of its own: Opper runs the generic
+OpenAI-compatible bridge against its `/v3/compat` routes by declaring `completionsPath`,
+`embeddingsPath` and `name` on its entry in `src/etc/di.xml`. Values must be scalars; use
+`xsi:type="const"` to point at a constant on your provider class.
+
 `model_override` (boolean, default `true`) says whether a call can run against another model than
 the configured one. Set it to `false` when the bridge fixes the model at platform creation, as
 Azure's does with its deployment; an override then throws `AiRequestNotSentException` instead of

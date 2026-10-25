@@ -63,7 +63,8 @@
         "bitexpert/phpstan-magento": "^0.44",
         "magento/magento-coding-standard": "*",
         "phpstan/phpstan": "^2.0",
-        "phpunit/phpunit": "^10.5"
+        "phpunit/phpunit": "^10.5",
+        "symfony/ai-generic-platform": "^0.14"
     },
     "autoload": {
         "files": [

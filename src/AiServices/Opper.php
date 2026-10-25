@@ -16,7 +16,7 @@ class Opper extends AbstractAiService implements ModelListProviderInterface
     use ModelListTrait;
 
     /**
-     * The factory adapter uses Opper's chat route rather than the generic bridge's /v1 default.
+     * Opper's chat route, handed to the generic bridge from etc/di.xml in place of its /v1 default.
      */
     public const COMPLETIONS_PATH = '/v3/compat/chat/completions';
 
@@ -73,7 +73,7 @@ class Opper extends AbstractAiService implements ModelListProviderInterface
     }
 
     /**
-     * The fixed gateway host and stored API key; the factory adapter handles endpoint paths.
+     * The fixed gateway host and stored API key; the bridge entry in etc/di.xml sets the paths.
      *
      * @param array<string,mixed> $configuration
      * @return list<mixed>
