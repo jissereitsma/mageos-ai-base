@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Require symfony/ai-platform and the OpenAI and Anthropic bridges at `^0.15` (was `^0.14`).
+
 ## [1.0.0] - 2026-10-08
 
 The first stable release. Everything under `Api\` and `Exceptions\` is marked `@api`, with a note

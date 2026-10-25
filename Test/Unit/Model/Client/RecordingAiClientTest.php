@@ -38,7 +38,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use MageOS\AiBase\Test\Unit\Stubs\RecordingLogger;
 use Symfony\AI\Platform\PlatformInterface;
-use Symfony\AI\Platform\Test\InMemoryPlatform;
+use Symfony\AI\Platform\Test\MockPlatformFactory;
 
 /**
  * @covers \MageOS\AiBase\Model\Client\RecordingAiClient
@@ -508,7 +508,7 @@ final class RecordingAiClientTest extends TestCase
 
     public function test_it_returns_the_wrapped_platform_untouched_from_get_platform(): void
     {
-        $platform = new InMemoryPlatform('Hi');
+        $platform = MockPlatformFactory::createPlatform('Hi');
         $delegate = new FakePlatformAwareAiClient($platform);
 
         $subject = new RecordingPlatformAwareAiClient(
@@ -523,7 +523,7 @@ final class RecordingAiClientTest extends TestCase
 
     public function test_it_forwards_option_normalisation_to_the_wrapped_client(): void
     {
-        $delegate = new FakePlatformAwareAiClient(new InMemoryPlatform('Hi'));
+        $delegate = new FakePlatformAwareAiClient(MockPlatformFactory::createPlatform('Hi'));
 
         $subject = new RecordingPlatformAwareAiClient(
             $delegate,
