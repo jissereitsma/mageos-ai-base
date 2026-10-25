@@ -40,7 +40,7 @@ bin/magento setup:upgrade
 Requires Magento 2.4.8+ or Mage-OS 1.1+, and PHP 8.2+. OpenAI and Anthropic work out of the box; every
 other provider needs its Symfony AI bridge package, which the admin form names when it's missing.
 
-The client is built on [symfony/ai-platform](https://github.com/symfony/ai) 0.14, which is
+The client is built on [symfony/ai-platform](https://github.com/symfony/ai) 0.15, which is
 experimental. This module's `Api` interfaces absorb its changes; code that reaches the Symfony
 platform directly does not.
 

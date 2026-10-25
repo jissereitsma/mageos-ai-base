@@ -278,7 +278,7 @@ public function getPlatformArguments(array $configuration): array
 ```
 
 The bundled Ollama, LM Studio, OpenAI-Compatible and Azure providers are worked examples. The
-bridge signatures are verified against **symfony/ai-platform v0.14.0**; the component is
+bridge signatures are verified against **symfony/ai-platform v0.15.0**; the component is
 experimental with no BC promise, so pin your version and re-verify on upgrade.
 
 A service without a bridge still works for configuration storage — `create('acme')` will
