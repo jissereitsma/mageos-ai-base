@@ -9,8 +9,10 @@ namespace MageOS\AiBase\Model\Config\Source;
  *
  * Use this variant when the consuming field should also allow "no explicit choice", which maps
  * onto AiClientFactoryInterface::create() without an argument: the first configured service whose
- * bridge is installed. Keeping it a separate class rather than a constructor flag means a
- * system.xml field says which of the two behaviours it wants by naming the source model.
+ * bridge is installed. Restricted to specific providers (below), resolve it with create('<code>')
+ * instead, so the fallback stays within the provider the feature needs. Keeping it a separate
+ * class rather than a constructor flag means a system.xml field says which of the two behaviours
+ * it wants by naming the source model.
  */
 class ConfiguredServiceWithAutomatic extends ConfiguredService
 {
@@ -23,7 +25,7 @@ class ConfiguredServiceWithAutomatic extends ConfiguredService
     {
         return array_merge(
             [['value' => '', 'label' => (string) __('Automatic (first usable service)')]],
-            parent::toOptionArray(),
+            $this->getConfiguredOptions(),
         );
     }
 }
