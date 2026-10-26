@@ -125,7 +125,7 @@ class EncryptedServices extends ArraySerialized
                         $service,
                         $this->sensitiveDataProcessor->restoreRow(
                             $service,
-                            $row,
+                            $this->assertHttpEndpoints($service, $row),
                             $this->storedRow($stored, $rowId, $service)
                         )
                     ),
@@ -136,6 +136,31 @@ class EncryptedServices extends ArraySerialized
         }
 
         return parent::beforeSave();
+    }
+
+    /**
+     * Refuse a row whose base URL or endpoint is not an http(s) URL, and pass it through otherwise.
+     *
+     * Throwing for the same reason as assertFormRendered(): the whole save rolls back and the
+     * administrator sees which field to fix. See SensitiveDataProcessor::getNonHttpEndpointFieldNames().
+     *
+     * @param string $service
+     * @param array<array-key,mixed> $row
+     * @return array<array-key,mixed>
+     * @throws ValidatorException
+     */
+    private function assertHttpEndpoints(string $service, #[\SensitiveParameter] array $row): array
+    {
+        $invalidFields = $this->sensitiveDataProcessor->getNonHttpEndpointFieldNames($service, $row);
+        if ($invalidFields !== []) {
+            throw new ValidatorException(__(
+                'The "%1" field of the %2 AI service has to be an http:// or https:// URL.',
+                implode('", "', $invalidFields),
+                $service,
+            ));
+        }
+
+        return $row;
     }
 
     /**
@@ -208,7 +233,7 @@ class EncryptedServices extends ArraySerialized
      * @param callable $processor
      * @return array<array-key,mixed>
      */
-    private function mapRows(array $value, callable $processor): array
+    private function mapRows(#[\SensitiveParameter] array $value, callable $processor): array
     {
         foreach ($value as $rowId => $row) {
             if (!is_array($row)) {

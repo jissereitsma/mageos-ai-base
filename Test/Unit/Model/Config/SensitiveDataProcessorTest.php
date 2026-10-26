@@ -403,6 +403,51 @@ final class SensitiveDataProcessorTest extends TestCase
         self::assertSame('0:3:enc(secret)', $result['certificate']);
     }
 
+    /**
+     * Refresh Models goes through Magento's cURL client, which also speaks FTP; neither client can
+     * call a URL without a scheme.
+     */
+    #[DataProvider('nonHttpEndpointProvider')]
+    public function test_a_base_url_that_is_not_http_is_reported(string $baseUrl): void
+    {
+        $names = $this->subject->getNonHttpEndpointFieldNames(self::UNKNOWN_SERVICE, ['base_url' => $baseUrl]);
+
+        self::assertSame(['base_url'], $names);
+    }
+
+    public static function nonHttpEndpointProvider(): iterable
+    {
+        yield 'ftp' => ['ftp://files.internal/models'];
+        yield 'file' => ['file:///etc/passwd'];
+        yield 'no scheme' => ['localhost:11434'];
+        yield 'scheme without a host' => ['http://'];
+    }
+
+    #[DataProvider('httpEndpointProvider')]
+    public function test_an_http_or_https_base_url_or_none_at_all_is_accepted(string $baseUrl): void
+    {
+        $names = $this->subject->getNonHttpEndpointFieldNames(self::UNKNOWN_SERVICE, ['base_url' => $baseUrl]);
+
+        self::assertSame([], $names);
+    }
+
+    public static function httpEndpointProvider(): iterable
+    {
+        yield 'http' => ['http://localhost:11434'];
+        yield 'https, upper case, padded' => ['  HTTPS://api.example.test/v1/  '];
+        yield 'empty, the provider default' => [''];
+    }
+
+    public function test_an_endpoint_the_schema_flags_is_held_to_http_whatever_its_name(): void
+    {
+        $names = $this->subject->getNonHttpEndpointFieldNames(
+            self::KNOWN_SERVICE,
+            ['host' => 'ftp://api.fake.test', 'model' => 'ftp-is-a-fine-model-name'],
+        );
+
+        self::assertSame(['host'], $names);
+    }
+
     public function test_encrypted_field_names_lists_only_encrypted_credentials(): void
     {
         $names = $this->subject->getEncryptedFieldNames(self::KNOWN_SERVICE, [

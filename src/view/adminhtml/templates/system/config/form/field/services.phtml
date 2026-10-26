@@ -187,6 +187,8 @@ $_isReadOnly = $block->isReadOnly();
     $testUrlJs = $escaper->escapeJs($block->getUrl('mageos_ai/service/test'));
     $testLabelJs = $escaper->escapeJs(__('Test Connection'));
     $testingLabelJs = $escaper->escapeJs(__('Testing...'));
+    // %1 is the latency in milliseconds, %2 the provider's reply; filled in once the test returns.
+    $testSucceededLabelJs = $escaper->escapeJs(__('OK (%1ms): %2'));
     // Refresh Models mirrors Test Connection: saved rows only, addressed by row id and scope. The
     // fetched list is stored for that row, since it belongs to the endpoint the row points at. The
     // button is rendered only for services whose schema opts in.
@@ -300,10 +302,11 @@ require(['prototype'], function () {
         const defaultAttr = field.default ? ' value="' + escapeHtml(field.default) + '"' : '';
         const inputType = (field.type === 'password' || field.type === 'text') ? field.type : 'text';
         const type = field.encrypted ? 'password' : inputType;
-        // Credentials are not the administrator's own password. Without this a password manager
-        // offers to save the provider's API key as a login for the store's admin domain, and
-        // offers it back on the next unrelated password field.
-        const autocomplete = ' autocomplete="off" spellcheck="false"';
+        // Credentials are not the administrator's own password. Browsers ignore "off" on a password
+        // field, so the admin login could be autofilled into an API key and sent to the provider;
+        // "new-password" is the value they honour there.
+        const autocomplete = ' autocomplete="' + (type === 'password' ? 'new-password' : 'off')
+            + '" spellcheck="false"';
 
         // A free-text field carrying options (the model field) gets them as datalist
         // suggestions, so a refreshed list is usable without constraining the input to it.
@@ -720,7 +723,10 @@ require(['prototype'], function () {
             .then(function (data) {
                 if (data.success) {
                     resultEl.classList.add('ai-test-result-success');
-                    resultEl.textContent = 'OK (' + data.latency_ms + 'ms): ' + data.response;
+                    // Function replacers, so a "$&" in the provider's reply is not read as a pattern.
+                    resultEl.textContent = '{$testSucceededLabelJs}'
+                        .replace('%1', function () { return String(data.latency_ms); })
+                        .replace('%2', function () { return String(data.response); });
                 } else {
                     resultEl.classList.add('ai-test-result-error');
                     resultEl.textContent = data.error;

@@ -76,7 +76,7 @@ class OpenAi extends AbstractAiService implements ModelListProviderInterface
     /**
      * @inheritdoc
      */
-    public function fetchModels(array $configuration): array
+    public function fetchModels(#[\SensitiveParameter] array $configuration): array
     {
         $response = $this->modelListFetcher->getJson(self::MODELS_URL, [
             'Authorization' => 'Bearer ' . $this->resolveApiKey($configuration),

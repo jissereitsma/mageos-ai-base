@@ -28,5 +28,5 @@ interface PlatformArgumentsProviderInterface
      * @param array<string,mixed> $configuration The configured row's fields, credentials decrypted
      * @return list<mixed>
      */
-    public function getPlatformArguments(array $configuration): array;
+    public function getPlatformArguments(#[\SensitiveParameter] array $configuration): array;
 }

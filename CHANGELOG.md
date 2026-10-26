@@ -7,8 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `i18n/en_US.csv` with every phrase the module shows, as a starting point for translations.
+- The README covers getting started, every admin setting, where the module shows up, and
+  troubleshooting.
+
 ### Changed
 - Require symfony/ai-platform and the OpenAI and Anthropic bridges at `^0.15` (was `^0.14`).
+- The Test Connection success line ("OK (%1ms): %2") is translatable.
+- The composer package now ships `phpcs.xml.dist`, `phpunit.xml.dist` and `phpstan.neon`, so the
+  tests can run from `vendor/`, and no longer ships `docs/`.
+- A Base URL or Endpoint has to be an `http://` or `https://` URL. Saving the AI Configuration, or
+  importing through `ServiceImporterInterface`, refuses anything else and names the field. A row
+  already stored with another scheme has to be corrected before the form saves again.
+
+### Security
+- API key inputs use `autocomplete="new-password"`. Browsers ignore `off` on password fields, so
+  the admin's own saved login could be autofilled into a key field and sent to the provider.
+- Parameters that carry a decrypted credential are marked `#[\SensitiveParameter]`, so they are
+  redacted from stack traces and error logs.
 
 ## [1.0.0] - 2026-10-08
 
