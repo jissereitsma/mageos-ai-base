@@ -114,6 +114,43 @@ final class ConfiguredServiceTest extends TestCase
     }
 
     /**
+     * A consumer restricts the dropdown through a virtual type's `serviceCodes` argument, which is
+     * exactly what the ObjectManager's arguments are here. Reading real rows is what proves the
+     * filter compares against the stored row's code and not against something else.
+     */
+    public function test_a_restricted_source_lists_only_rows_of_those_providers(): void
+    {
+        $this->storeServices([
+            '_row1' => ['openai' => ['api_key' => 'k', 'model' => 'gpt-4o']],
+            '_row2' => ['google' => ['api_key' => 'k', 'model' => 'gemini-2.5-pro']],
+        ]);
+
+        $options = $this->objectManager
+            ->create(ConfiguredService::class, ['serviceCodes' => ['google']])
+            ->toOptionArray();
+
+        self::assertSame(['_row2'], array_column($options, 'value'));
+    }
+
+    /**
+     * The placeholder names the provider by its display name, which only the real registry knows.
+     */
+    public function test_a_restricted_source_names_the_missing_provider_by_its_display_name(): void
+    {
+        $this->storeServices([
+            '_row1' => ['openai' => ['api_key' => 'k', 'model' => 'gpt-4o']],
+        ]);
+
+        $options = $this->objectManager
+            ->create(ConfiguredService::class, ['serviceCodes' => ['google']])
+            ->toOptionArray();
+
+        self::assertCount(1, $options);
+        self::assertSame('', $options[0]['value']);
+        self::assertStringStartsWith('No Google Gemini service configured yet.', (string) $options[0]['label']);
+    }
+
+    /**
      * @param array<string, array<string, array<string, string>>> $rows
      * @return void
      */

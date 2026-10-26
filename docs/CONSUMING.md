@@ -519,6 +519,65 @@ if ($service === null) {
 back to another row: another row means another account and another bill, which is not a
 substitution to make on the admin's behalf.
 
+### Restricting the choice to specific providers
+
+A feature that only works with one provider (a Gemini-specific API, an OpenAI-only endpoint) should
+not let the admin point it at a row of another provider. Declare a virtual type over either source
+model with the `serviceCodes` argument set, and point your field at the virtual type.
+
+The argument exists since ai-base 1.1.0, so require `"mage-os/module-ai-base": "^1.1"`. On an
+older release Magento's object manager drops the unknown argument without an error, and the
+dropdown quietly lists every provider again.
+
+```xml
+<!-- your module's etc/di.xml -->
+<virtualType name="Vendor\Module\Model\Config\Source\GeminiService"
+             type="MageOS\AiBase\Model\Config\Source\ConfiguredService">
+    <arguments>
+        <argument name="serviceCodes" xsi:type="array">
+            <item name="google" xsi:type="string">google</item>
+        </argument>
+    </arguments>
+</virtualType>
+```
+
+```xml
+<!-- your module's etc/adminhtml/system.xml -->
+<field id="ai_service" translate="label" type="select" sortOrder="10"
+       showInDefault="1" showInWebsite="1" showInStore="1">
+    <label>Gemini service</label>
+    <source_model>Vendor\Module\Model\Config\Source\GeminiService</source_model>
+</field>
+```
+
+The dropdown then lists only that provider's rows. Several codes are allowed, for a feature that
+works with any of a few providers. The codes are the ones `AiServiceInterface::getCode()` returns:
+`openai`, `anthropic`, `azure`, `google`, `deepseek`, `huggingface`, `lmstudio`, `ollama`,
+`openrouter`, `openai_compatible`.
+
+When the admin has not configured any row of those providers, the dropdown offers one empty-valued
+option that says so: *No Google Gemini service configured yet. Add one under Stores >
+Configuration > Mage-OS > AI Configuration.* The stored value is then `''`, the same "nothing
+chosen" your code already handles. The `WithAutomatic` variant skips that placeholder, since its
+*Automatic* option already carries the empty value; resolve *Automatic* there with
+`create('google')` rather than `create()`, so the fallback stays within the provider the feature
+needs, and gets a `LocalizedException` naming the missing provider instead of a row of another one.
+
+The filter is an argument rather than a shipped virtual type per provider because the useful set is
+open: a module may accept both `openai` and `azure`, or treat a store's `openai_compatible` gateway
+as good enough.
+
+The dropdown is the only thing the filter touches. A row id already stored in your field stays
+stored, and `getById()` / `createById()` keep resolving it whatever its provider. Two consequences
+when you restrict a field that has shipped unrestricted before:
+
+- A stored row of another provider is no longer in the dropdown, so the field renders with the
+  first option selected, and the next Save of that config section writes that option. The feature
+  keeps using the old row until then.
+- Nothing stops the stored row from being the wrong provider in between. If the feature breaks on
+  the wrong provider, check `getCode()` on the resolved service and treat a mismatch like an unset
+  field.
+
 ## Moving your module's own credentials into AI Base
 
 A module that kept its own API key fields before it used this one can move the saved key over

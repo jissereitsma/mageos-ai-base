@@ -87,7 +87,7 @@ AiServiceSelectorInterface::getByCode(string $code): AiServiceInterface[]
 AiServiceSelectorInterface::getById(string $id): ?AiServiceInterface
 ```
 
-Consumer modules that want the administrator to choose a service point a `select` field in their own `system.xml` at `Model\Config\Source\ConfiguredService` (or `ConfiguredServiceWithAutomatic`, which prepends an empty-valued "Automatic" option) and resolve the stored row id through `getById()` or `AiClientFactoryInterface::createById()`.
+Consumer modules that want the administrator to choose a service point a `select` field in their own `system.xml` at `Model\Config\Source\ConfiguredService` (or `ConfiguredServiceWithAutomatic`, which prepends an empty-valued "Automatic" option) and resolve the stored row id through `getById()` or `AiClientFactoryInterface::createById()`. A consumer that only works with specific providers declares a virtual type over either class with the `serviceCodes` array argument set; the dropdown then lists only those providers' rows and, when none is configured, one empty-valued placeholder naming the missing provider (the `WithAutomatic` variant skips the placeholder, since "Automatic" already carries the empty value).
 
 Multiple entries per code are possible because admins can add the same backend multiple times in the UI, which is why `getByCode` returns an array.
 

@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Model\Config\Source\ConfiguredService` and its `WithAutomatic` variant take a `serviceCodes`
+  constructor argument. A consumer whose feature works with one provider only declares a virtual
+  type with that argument set and points its `system.xml` field at it; the dropdown then lists
+  only that provider's rows, and names the provider when none is configured. A consumer using it
+  has to require this version or later: an older release ignores the argument silently. See
+  "Restricting the choice to specific providers" in `docs/CONSUMING.md`.
 - `i18n/en_US.csv` with every phrase the module shows, as a starting point for translations.
 - The README covers getting started, every admin setting, where the module shows up, and
   troubleshooting.

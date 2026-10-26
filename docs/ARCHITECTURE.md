@@ -56,7 +56,8 @@ Model/
     ServiceImporter                 adds a default-scope row from code (ServiceImporterInterface)
     StoredServicesStorage           raw read/conditional write of every scope's stored value (internal)
     Backend/EncryptedServices       config backend model (save/load hooks)
-    Source/ConfiguredService        option source for consumer modules' own system.xml fields
+    Source/ConfiguredService        option source for consumer modules' own system.xml fields;
+                                    a `serviceCodes` argument restricts it to specific providers
     Source/ConfiguredServiceWithAutomatic  the same, plus an empty-valued "Automatic" option
   Chat/                             value objects behind the chat contracts
     ChatRequestBuilder              the builder behind ChatRequestBuilderInterface

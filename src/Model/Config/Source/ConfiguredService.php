@@ -37,6 +37,23 @@ use MageOS\AiBase\Model\ServiceScope;
  * selector's ambient scope answers, as it always did. A field saved on a website while a store view
  * below it overrides the services list is still offered the website's rows: one dropdown cannot show
  * every store view's list at once.
+ *
+ * Restricting the choice: a module whose feature works with one provider only (a Gemini-specific
+ * API, say) declares a virtual type over this class with the `serviceCodes` argument set, and
+ * points its field at that:
+ *
+ *     <virtualType name="Vendor\Module\Model\Config\Source\GeminiService"
+ *                  type="MageOS\AiBase\Model\Config\Source\ConfiguredService">
+ *         <arguments>
+ *             <argument name="serviceCodes" xsi:type="array">
+ *                 <item name="google" xsi:type="string">google</item>
+ *             </argument>
+ *         </arguments>
+ *     </virtualType>
+ *
+ * Only rows of those providers are listed then. The filter is a constructor argument rather than
+ * a subclass per provider because the set is open (a store's own OpenAI-compatible gateway counts
+ * as OpenAI for one module and not for another) and because a module may accept several codes.
  */
 class ConfiguredService implements OptionSourceInterface
 {
@@ -52,6 +69,7 @@ class ConfiguredService implements OptionSourceInterface
      * @param RequestInterface $request The config edit request, which names the scope being edited
      * @param ConfigScopeResolver $scopeResolver
      * @param ServiceScope $serviceScope
+     * @param list<string> $serviceCodes Provider codes to list rows of; empty lists every provider
      */
     public function __construct(
         private readonly AiServiceSelectorInterface $serviceSelector,
@@ -60,6 +78,7 @@ class ConfiguredService implements OptionSourceInterface
         private readonly RequestInterface $request,
         private readonly ConfigScopeResolver $scopeResolver,
         private readonly ServiceScope $serviceScope,
+        private readonly array $serviceCodes = [],
     ) {
     }
 
@@ -69,6 +88,18 @@ class ConfiguredService implements OptionSourceInterface
      * @return array<int,array{value:string,label:string}>
      */
     public function toOptionArray(): array
+    {
+        $options = $this->getConfiguredOptions();
+
+        return $options === [] ? $this->getNothingConfiguredOptions() : $options;
+    }
+
+    /**
+     * One option per configured row this source lists, in the admin's row order.
+     *
+     * @return array<int,array{value:string,label:string}>
+     */
+    protected function getConfiguredOptions(): array
     {
         return $this->numberDuplicateLabels(array_map(
             fn (AiServiceInterface $service): array => [
@@ -80,11 +111,76 @@ class ConfiguredService implements OptionSourceInterface
     }
 
     /**
-     * The configured rows of the scope being edited, or of the ambient scope when none is named.
+     * What to offer when no row qualifies.
+     *
+     * Unrestricted, nothing: an empty dropdown is the state it always was, and the consuming
+     * module decides what an unset field means. Restricted to specific providers, one empty-valued
+     * option naming them: the module asked for a provider the administrator has not configured,
+     * and an empty dropdown would leave them guessing which of ten providers to add. The empty
+     * value is the same "nothing chosen" a consumer already handles.
+     *
+     * @return array<int,array{value:string,label:string}>
+     */
+    private function getNothingConfiguredOptions(): array
+    {
+        if ($this->serviceCodes === []) {
+            return [];
+        }
+
+        return [[
+            'value' => '',
+            'label' => (string) __(
+                'No %1 service configured yet. Add one under Stores > Configuration > Mage-OS > AI Configuration.',
+                $this->listRestrictedProviders(),
+            ),
+        ]];
+    }
+
+    /**
+     * The restricted providers' display names as one phrase: "OpenAI", "OpenAI or Anthropic",
+     * "OpenAI, Anthropic or Azure OpenAI".
+     *
+     * @return string
+     */
+    private function listRestrictedProviders(): string
+    {
+        $names = array_map($this->getServiceName(...), $this->serviceCodes);
+        $allButLast = implode(', ', array_slice($names, 0, -1));
+        $last = implode('', array_slice($names, -1));
+
+        return $allButLast === '' ? $last : sprintf('%s %s %s', $allButLast, __('or'), $last);
+    }
+
+    /**
+     * The configured rows this source lists.
+     *
+     * Those of the scope being edited, or of the ambient scope when none is named, narrowed to the
+     * providers this source is restricted to.
      *
      * @return list<AiServiceInterface>
      */
     private function getConfiguredServices(): array
+    {
+        return array_values(array_filter($this->getConfiguredServicesOfEveryProvider(), $this->isListed(...)));
+    }
+
+    /**
+     * Whether a row belongs to a provider this source lists.
+     *
+     * @param AiServiceInterface $service
+     * @return bool
+     */
+    private function isListed(AiServiceInterface $service): bool
+    {
+        return $this->serviceCodes === [] || in_array($service->getCode(), $this->serviceCodes, true);
+    }
+
+    /**
+     * Every configured row of the scope being edited, or of the ambient scope when none is named.
+     *
+     * @return list<AiServiceInterface>
+     */
+    private function getConfiguredServicesOfEveryProvider(): array
     {
         $scope = $this->scopeResolver->fromRequest($this->request);
         if ($scope->isDefault()) {

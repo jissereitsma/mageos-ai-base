@@ -249,7 +249,132 @@ final class ConfiguredServiceTest extends TestCase
         self::assertSame('', $options[0]['value']);
     }
 
-    private function subject(): ConfiguredService
+    /**
+     * A module whose feature only works with one provider restricts the dropdown to that provider's
+     * rows, so an administrator cannot point a Gemini-only feature at an OpenAI key.
+     */
+    public function test_lists_only_the_rows_of_the_providers_it_is_restricted_to(): void
+    {
+        $this->serviceSelector->method('getAll')->willReturn([
+            new AiService('_row_a', 'openai', ['model' => 'gpt-4o']),
+            new AiService('_row_b', 'anthropic', ['model' => 'claude-sonnet-4-6']),
+            new AiService('_row_c', 'openai', ['model' => 'o1-mini']),
+        ]);
+
+        self::assertSame(
+            ['_row_a', '_row_c'],
+            array_column($this->subject(['openai'])->toOptionArray(), 'value')
+        );
+    }
+
+    public function test_a_restriction_may_name_several_providers(): void
+    {
+        $this->serviceSelector->method('getAll')->willReturn([
+            new AiService('_row_a', 'openai', ['model' => 'gpt-4o']),
+            new AiService('_row_b', 'anthropic', ['model' => 'claude-sonnet-4-6']),
+            new AiService('_row_c', 'ollama', ['model' => 'llama3']),
+        ]);
+
+        self::assertSame(
+            ['_row_a', '_row_b'],
+            array_column($this->subject(['openai', 'anthropic'])->toOptionArray(), 'value')
+        );
+    }
+
+    /**
+     * An empty dropdown would leave the administrator guessing which of ten providers the module
+     * wants. The placeholder names it, and carries the empty value a consumer already treats as
+     * "nothing chosen".
+     */
+    public function test_names_the_missing_provider_when_none_of_its_rows_is_configured(): void
+    {
+        $this->serviceSelector->method('getAll')->willReturn([
+            new AiService('_row_a', 'openai', ['model' => 'gpt-4o']),
+        ]);
+
+        $options = $this->subject(['anthropic'])->toOptionArray();
+
+        self::assertCount(1, $options);
+        self::assertSame('', $options[0]['value']);
+        self::assertSame(
+            'No Anthropic service configured yet. Add one under Stores > Configuration > Mage-OS > AI Configuration.',
+            (string) $options[0]['label']
+        );
+    }
+
+    public function test_the_placeholder_names_every_restricted_provider_as_alternatives(): void
+    {
+        $this->serviceSelector->method('getAll')->willReturn([]);
+
+        self::assertStringContainsString(
+            'No OpenAI or Anthropic service configured yet.',
+            (string) $this->subject(['openai', 'anthropic'])->toOptionArray()[0]['label']
+        );
+        self::assertStringContainsString(
+            'No OpenAI, Anthropic or Ollama service configured yet.',
+            (string) $this->subject(['openai', 'anthropic', 'ollama'])->toOptionArray()[0]['label']
+        );
+    }
+
+    /**
+     * The placeholder stands in for an empty dropdown and nothing else. One matching row is a
+     * usable dropdown, so the providers without rows are not mentioned next to it.
+     */
+    public function test_one_matching_row_is_listed_without_a_placeholder_for_the_other_providers(): void
+    {
+        $this->serviceSelector->method('getAll')->willReturn([
+            new AiService('_row_a', 'openai', ['model' => 'gpt-4o']),
+        ]);
+
+        $options = $this->subject(['openai', 'anthropic'])->toOptionArray();
+
+        self::assertSame(['_row_a'], array_column($options, 'value'));
+        self::assertStringNotContainsString('Anthropic', (string) $options[0]['label']);
+    }
+
+    public function test_the_placeholder_falls_back_to_the_raw_code_of_an_unregistered_provider(): void
+    {
+        $this->serviceSelector->method('getAll')->willReturn([]);
+
+        self::assertStringContainsString(
+            'No somevendor service configured yet.',
+            (string) $this->subject(['somevendor'])->toOptionArray()[0]['label']
+        );
+    }
+
+    /**
+     * "Automatic" is already the empty-valued fallback; a second empty-valued option next to it
+     * could not be told apart once saved.
+     */
+    public function test_restricted_automatic_variant_offers_only_automatic_when_nothing_matches(): void
+    {
+        $this->serviceSelector->method('getAll')->willReturn([
+            new AiService('_row_a', 'openai', ['model' => 'gpt-4o']),
+        ]);
+
+        $options = $this->automaticSubject(['anthropic'])->toOptionArray();
+
+        self::assertCount(1, $options);
+        self::assertSame('Automatic (first usable service)', (string) $options[0]['label']);
+    }
+
+    public function test_restricted_automatic_variant_lists_automatic_before_the_matching_rows(): void
+    {
+        $this->serviceSelector->method('getAll')->willReturn([
+            new AiService('_row_a', 'openai', ['model' => 'gpt-4o']),
+            new AiService('_row_b', 'anthropic', ['model' => 'claude-sonnet-4-6']),
+        ]);
+
+        self::assertSame(
+            ['', '_row_b'],
+            array_column($this->automaticSubject(['anthropic'])->toOptionArray(), 'value')
+        );
+    }
+
+    /**
+     * @param list<string> $serviceCodes
+     */
+    private function subject(array $serviceCodes = []): ConfiguredService
     {
         return new ConfiguredService(
             $this->serviceSelector,
@@ -258,10 +383,14 @@ final class ConfiguredServiceTest extends TestCase
             $this->createStub(RequestInterface::class),
             $this->scopeResolver,
             $this->serviceScope,
+            $serviceCodes,
         );
     }
 
-    private function automaticSubject(): ConfiguredServiceWithAutomatic
+    /**
+     * @param list<string> $serviceCodes
+     */
+    private function automaticSubject(array $serviceCodes = []): ConfiguredServiceWithAutomatic
     {
         return new ConfiguredServiceWithAutomatic(
             $this->serviceSelector,
@@ -270,6 +399,7 @@ final class ConfiguredServiceTest extends TestCase
             $this->createStub(RequestInterface::class),
             $this->scopeResolver,
             $this->serviceScope,
+            $serviceCodes,
         );
     }
 
