@@ -10,6 +10,7 @@ use Magento\Framework\Exception\LocalizedException;
 use MageOS\AiBase\AiServices\Azure;
 use MageOS\AiBase\AiServices\LmStudio;
 use MageOS\AiBase\AiServices\Ollama;
+use MageOS\AiBase\AiServices\Opper;
 use MageOS\AiBase\AiServices\OpenAiCompatible;
 use MageOS\AiBase\Api\AiServiceSelectorInterface;
 use MageOS\AiBase\Api\Data\FieldDescriptorInterfaceFactory;
@@ -37,7 +38,7 @@ use Psr\Log\NullLogger;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\AI\Platform\Test\InMemoryPlatform;
+use Symfony\AI\Platform\Test\MockPlatformFactory;
 
 final class ClientFactoryTest extends TestCase
 {
@@ -59,6 +60,10 @@ final class ClientFactoryTest extends TestCase
         RecordingAnthropicFactory::$httpClient = null;
         RecordingAnthropicFactory::$modelCatalog = null;
         RecordingLocalRuntimeFactory::$baseUrl = null;
+        RecordingGenericFactory::$modelCatalog = null;
+        RecordingGenericFactory::$completionsPath = null;
+        RecordingGenericFactory::$embeddingsPath = null;
+        RecordingGenericFactory::$name = null;
     }
 
     /**
@@ -101,6 +106,7 @@ final class ClientFactoryTest extends TestCase
             new LmStudio($fieldFactory, $modelListFetcher),
             new OpenAiCompatible($fieldFactory),
             new Azure($fieldFactory),
+            new Opper($fieldFactory, $modelListFetcher),
         ]);
     }
 
@@ -603,6 +609,65 @@ final class ClientFactoryTest extends TestCase
     }
 
     /**
+     * Opper runs the generic bridge against its own routes. The paths and platform name are fixed
+     * arguments on its bridge entry, and they have to reach the factory next to the credentials
+     * and the shared optional arguments; a wrong parameter name would silently leave the bridge
+     * posting to the generic /v1 default.
+     */
+    public function test_opper_passes_credentials_and_the_fixed_arguments_from_its_bridge_entry(): void
+    {
+        $this->serviceSelector->method('getByCode')->with('opper')->willReturn([
+            new AiService('row_opper', 'opper', ['api_key' => 'op-key', 'model' => 'dynamic/support']),
+        ]);
+        $this->clientFactory->method('create')->willReturn($this->createMock(SymfonyAiClient::class));
+        $subject = $this->newSubject(new BridgeRegistry([
+            'opper' => [
+                'factory' => RecordingGenericFactory::class,
+                'package' => 'symfony/ai-generic-platform',
+                'arguments' => [
+                    'completionsPath' => Opper::COMPLETIONS_PATH,
+                    'embeddingsPath' => Opper::EMBEDDINGS_PATH,
+                    'name' => 'opper',
+                ],
+            ],
+        ]));
+
+        $subject->create('opper');
+
+        self::assertSame('https://api.opper.ai', RecordingGenericFactory::$baseUrl);
+        self::assertSame('op-key', RecordingGenericFactory::$apiKey);
+        self::assertInstanceOf(HttpClientInterface::class, RecordingGenericFactory::$httpClient);
+        self::assertSame('/v3/compat/chat/completions', RecordingGenericFactory::$completionsPath);
+        self::assertSame('/v3/compat/embeddings', RecordingGenericFactory::$embeddingsPath);
+        self::assertSame('opper', RecordingGenericFactory::$name);
+        self::assertNull(RecordingGenericFactory::$modelCatalog);
+    }
+
+    /**
+     * A fixed argument the installed factory does not declare is dropped, the same way the optional
+     * HTTP client and catalogue are: an older bridge release must keep working rather than die on
+     * an unknown named argument.
+     */
+    public function test_a_fixed_argument_the_factory_does_not_declare_is_dropped(): void
+    {
+        $this->serviceSelector->method('getByCode')->with('ollama')->willReturn([
+            new AiService('row_ollama', 'ollama', ['base_url' => 'http://ollama:11434', 'model' => 'llama3']),
+        ]);
+        $this->clientFactory->method('create')->willReturn($this->createMock(SymfonyAiClient::class));
+        $subject = $this->newSubject(new BridgeRegistry([
+            'ollama' => [
+                'factory' => RecordingLocalRuntimeFactory::class,
+                'package' => 'symfony/ai-ollama-platform',
+                'arguments' => ['completionsPath' => '/elsewhere'],
+            ],
+        ]));
+
+        $subject->create('ollama');
+
+        self::assertSame('http://ollama:11434', RecordingLocalRuntimeFactory::$baseUrl);
+    }
+
+    /**
      * A pasted base URL ending in /v1 (or /v1/) is stripped before reaching the bridge — the bridge
      * always appends /v1/chat/completions itself, so leaving it in would double it into a 404.
      */
@@ -732,7 +797,7 @@ final class ClientFactoryTest extends TestCase
         $this->usageTrackingEnabled = true;
         $this->serviceSelector->method('getByCode')->with('openai')
             ->willReturn([new AiService('row_openai', 'openai', ['api_key' => 'k', 'model' => 'gpt-4o'])]);
-        $this->clientFactory->method('create')->willReturn(new FakePlatformAwareAiClient(new InMemoryPlatform('Hi')));
+        $this->clientFactory->method('create')->willReturn(new FakePlatformAwareAiClient(MockPlatformFactory::createPlatform('Hi')));
         $this->recordingPlatformAwareClientFactory->method('create')->willReturnCallback(
             fn (array $data): RecordingPlatformAwareAiClient => new RecordingPlatformAwareAiClient(
                 $data['platformAwareDelegate'],
@@ -914,15 +979,28 @@ final class RecordingGenericFactory
 {
     public static ?string $baseUrl = null;
     public static ?string $apiKey = null;
+    public static ?object $httpClient = null;
+    public static ?object $modelCatalog = null;
+    public static ?string $completionsPath = null;
+    public static ?string $embeddingsPath = null;
+    public static ?string $name = null;
 
     public static function createPlatform(
         string $baseUrl,
         ?string $apiKey = null,
         ?object $httpClient = null,
         ?object $modelCatalog = null,
+        string $completionsPath = '/v1/chat/completions',
+        string $embeddingsPath = '/v1/embeddings',
+        string $name = 'generic',
     ): object {
         self::$baseUrl = $baseUrl;
         self::$apiKey = $apiKey;
+        self::$httpClient = $httpClient;
+        self::$modelCatalog = $modelCatalog;
+        self::$completionsPath = $completionsPath;
+        self::$embeddingsPath = $embeddingsPath;
+        self::$name = $name;
 
         return new \stdClass();
     }

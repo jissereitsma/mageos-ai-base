@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
  * factories named as strings in di.xml, so native signatures here say `object` while the
  * docblocks name the real platform type. Static analysis checks every call against that type,
  * and the adapter accepts whatever a registered factory built, which is what the client factory
- * checks for too. Written against symfony/ai-platform v0.14.0; the component is experimental and
+ * checks for too. Written against symfony/ai-platform v0.15.0; the component is experimental and
  * not covered by Symfony's BC promise, so pin the version and re-verify on upgrade.
  */
 class SymfonyAiClient implements AiClientInterface, PlatformAwareInterface

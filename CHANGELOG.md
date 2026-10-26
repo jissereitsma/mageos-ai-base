@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   troubleshooting.
 
 ### Changed
+- Require symfony/ai-platform and the OpenAI and Anthropic bridges at `^0.15` (was `^0.14`).
 - The Test Connection success line ("OK (%1ms): %2") is translatable.
 - The composer package now ships `phpcs.xml.dist`, `phpunit.xml.dist` and `phpstan.neon`, so the
   tests can run from `vendor/`, and no longer ships `docs/`.

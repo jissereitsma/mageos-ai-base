@@ -36,6 +36,7 @@ final class RegisteredProvidersTest extends TestCase
         'ollama',
         'openai',
         'openrouter',
+        'opper',
     ];
 
     private ServiceRegistry $serviceRegistry;
