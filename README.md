@@ -16,7 +16,7 @@ and a dashboard that shows what each module spends.
 
 ## What it provides
 
-- **Provider configuration.** OpenAI, Anthropic, Google Gemini, Azure OpenAI, DeepSeek, OpenRouter,
+- **Provider configuration.** OpenAI, Anthropic, Google Gemini, Azure OpenAI, DeepSeek, OpenRouter, Opper,
   Hugging Face, Ollama, LM Studio and any OpenAI-compatible gateway. Add a provider more than once,
   name each row, switch rows off, test the connection and refresh the model list from the form. API
   keys are encrypted at rest and never shown again.
@@ -41,7 +41,7 @@ Requires Magento 2.4.8+ or Mage-OS 1.1+, and PHP 8.2+. OpenAI and Anthropic work
 other provider needs its Symfony AI bridge package, which the admin form names when it's missing.
 The module only adds admin screens, so it works the same with Luma, Hyvä or a headless storefront.
 
-The client is built on [symfony/ai-platform](https://github.com/symfony/ai) 0.14, which is
+The client is built on [symfony/ai-platform](https://github.com/symfony/ai) 0.15, which is
 experimental. This module's `Api` interfaces absorb its changes; code that reaches the Symfony
 platform directly does not.
 

@@ -35,7 +35,7 @@ use Symfony\AI\Platform\Message\MessageBag;
 use Symfony\AI\Platform\Message\Role;
 use Symfony\AI\Platform\Metadata\Metadata;
 use Symfony\AI\Platform\PlatformInterface;
-use Symfony\AI\Platform\Test\InMemoryPlatform;
+use Symfony\AI\Platform\Test\MockPlatformFactory;
 use Symfony\AI\Platform\Message\AssistantMessage;
 use Symfony\AI\Platform\Result\MultiPartResult;
 use Symfony\AI\Platform\Result\Stream\AssistantMessageStreamListener;
@@ -650,7 +650,7 @@ final class SymfonyAiClientChatTest extends TestCase
      */
     public function test_hands_out_the_platform_it_was_built_with(): void
     {
-        $platform = new InMemoryPlatform('Hi');
+        $platform = MockPlatformFactory::createPlatform('Hi');
         $client = new SymfonyAiClient(
             $platform,
             'gpt-4o',
@@ -674,7 +674,7 @@ final class SymfonyAiClientChatTest extends TestCase
      */
     public function test_the_platform_it_hands_out_satisfies_symfonys_own_contract(): void
     {
-        $platform = new InMemoryPlatform('Hi there');
+        $platform = MockPlatformFactory::createPlatform('Hi there');
         $client = new SymfonyAiClient(
             $platform,
             'gpt-4o',

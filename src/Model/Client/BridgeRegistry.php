@@ -21,6 +21,7 @@ namespace MageOS\AiBase\Model\Client;
  *     package?: string,
  *     dialect?: string,
  *     catalog?: string,
+ *     arguments?: array<array-key,mixed>,
  *     cache_outside_prompt?: bool|string,
  *     model_override?: bool|string,
  * }
@@ -56,6 +57,11 @@ class BridgeRegistry
      * Key of the per-call model override flag within a bridge definition.
      */
     private const KEY_MODEL_OVERRIDE = 'model_override';
+
+    /**
+     * Key of the fixed named arguments for the bridge factory within a bridge definition.
+     */
+    private const KEY_ARGUMENTS = 'arguments';
 
     /**
      * @param array<string,BridgeDefinition> $bridges Service code => bridge, package,
@@ -185,6 +191,33 @@ class BridgeRegistry
         $value = $this->bridges[$serviceCode][self::KEY_MODEL_OVERRIDE] ?? true;
 
         return is_string($value) ? filter_var($value, FILTER_VALIDATE_BOOLEAN) : $value;
+    }
+
+    /**
+     * Fixed named arguments the bridge factory receives on every call, beyond the credentials.
+     *
+     * A gateway that reuses another provider's bridge usually differs from it in a few constants:
+     * the generic OpenAI-compatible bridge takes its endpoint paths and a platform name as named
+     * parameters, and Opper's gateway serves chat under /v3/compat rather than /v1. Declaring those
+     * values on the bridge entry keeps the provider on the upstream factory, so the availability
+     * check still probes the real bridge class, instead of a module-local adapter that only exists
+     * to pass constants through. Only scalar values are returned, because that is all di.xml can
+     * express and all a factory parameter of this kind takes; ClientFactory drops the ones the
+     * installed factory version does not declare.
+     *
+     * @param string $serviceCode
+     * @return array<string,scalar> Parameter name => value
+     */
+    public function getArguments(string $serviceCode): array
+    {
+        $scalars = [];
+        foreach ($this->bridges[$serviceCode][self::KEY_ARGUMENTS] ?? [] as $name => $value) {
+            if (is_string($name) && is_scalar($value)) {
+                $scalars[$name] = $value;
+            }
+        }
+
+        return $scalars;
     }
 
     /**

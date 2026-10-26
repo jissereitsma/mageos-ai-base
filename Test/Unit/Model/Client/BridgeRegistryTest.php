@@ -77,6 +77,45 @@ final class BridgeRegistryTest extends TestCase
     }
 
     /**
+     * Opper's entry fixes the generic bridge's endpoint paths and name; the registry hands them
+     * back by parameter name so the client factory can pass them as named arguments.
+     */
+    public function test_it_reports_the_fixed_arguments_a_bridge_entry_declares(): void
+    {
+        $registry = new BridgeRegistry(['opper' => [
+            'factory' => FakePlatformFactory::class,
+            'arguments' => ['completionsPath' => '/v3/compat/chat/completions', 'supportsEmbeddings' => false],
+        ]]);
+
+        self::assertSame(
+            ['completionsPath' => '/v3/compat/chat/completions', 'supportsEmbeddings' => false],
+            $registry->getArguments('opper')
+        );
+    }
+
+    public function test_it_reports_no_fixed_arguments_when_the_entry_declares_none(): void
+    {
+        $registry = new BridgeRegistry(['openai' => ['factory' => FakePlatformFactory::class]]);
+
+        self::assertSame([], $registry->getArguments('openai'));
+        self::assertSame([], $registry->getArguments('acmeai'));
+    }
+
+    /**
+     * di.xml can only express scalars here, and a factory parameter of this kind takes nothing
+     * else, so a nested array or an unnamed entry is a misregistration and must not reach the
+     * factory as a named argument.
+     */
+    public function test_it_drops_fixed_arguments_that_are_not_named_scalars(): void
+    {
+        $registry = new BridgeRegistry(['opper' => [
+            'arguments' => ['name' => 'opper', 'nested' => ['a' => 'b'], 0 => 'positional'],
+        ]]);
+
+        self::assertSame(['name' => 'opper'], $registry->getArguments('opper'));
+    }
+
+    /**
      * Anthropic reports cache reads and writes outside its prompt count, unlike every other
      * bridge, so the client needs a per-bridge signal to normalize on.
      */

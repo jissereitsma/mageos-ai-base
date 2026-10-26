@@ -304,7 +304,9 @@ class ClientFactory implements AiClientFactoryInterface
      * Bridge signatures differ, and they gain parameters between releases. Asking the factory what
      * it accepts means an install running an older bridge silently goes without rather than dying
      * on an unknown named argument, and a bridge that later grows one starts receiving it with no
-     * change here.
+     * change here. The same filter applies to the fixed arguments a bridge entry declares in
+     * di.xml (see BridgeRegistry::getArguments()), so a gateway that only differs from its bridge's
+     * defaults in a few constants needs no factory of its own.
      *
      * @param string $factoryClass Bridge factory FQCN
      * @param string $code Service code
@@ -320,7 +322,7 @@ class ClientFactory implements AiClientFactoryInterface
 
         $model = $config['model'] ?? null;
 
-        $arguments = [];
+        $arguments = array_intersect_key($this->bridgeRegistry->getArguments($code), $accepted);
         if (isset($accepted['httpClient'])) {
             $arguments['httpClient'] = $this->createHttpClient();
         }

@@ -109,7 +109,7 @@ jobs:
   # them. That job only runs the PHP versions the Magento matrix pairs with each release,
   # though. This one runs the chat client tests standalone across the full PHP range
   # composer.json claims to support, so the 8.2 floor and the newest PHP are exercised against
-  # the newest symfony/ai 0.14 release too.
+  # the newest symfony/ai 0.15 release too.
   unit-tests-with-ai-platform:
     name: Unit tests with symfony/ai-platform (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
